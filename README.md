@@ -3,6 +3,7 @@
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
 - Doesn't support dynamic partitions
+- Doesn't support USB type C wired
 - Spoofing product model/brand/device/manufacturer
 
 ## Requirements
