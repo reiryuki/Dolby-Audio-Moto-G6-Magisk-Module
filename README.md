@@ -3,6 +3,7 @@
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
 - Doesn't support dynamic partitions
+- Spoofing product model/brand/device/manufacturer
 
 ## Requirements
 - Android 8.1, 9, 10, 11 (Need test for Android 8.0)
