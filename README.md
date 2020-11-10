@@ -4,7 +4,7 @@
 - An EQ ported from Motorola G6 (ali)
 - Doesn't support dynamic partitions
 - Doesn't support USB type C wired
-- Spoofing product model/brand/device/manufacturer
+- Spoofing product model/brand/device/manufacturer, may break some system apps.
 
 ## Requirements
 - Android 8.1, 9, 10, 11 (Need test for Android 8.0)
