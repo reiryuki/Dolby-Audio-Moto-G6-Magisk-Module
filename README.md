@@ -8,7 +8,6 @@
 
 ## Requirements
 - Android 8.1, 9, 10, 11 (Need test for Android 8.0)
-- 32 bit or 64 bit platform
 - Magisk Installed
 
 ## Installation Guide
@@ -25,10 +24,13 @@
 - You can rename dax-default extension to use more bass enhancer boost. See /data/adb/modules_update/DolbyAudio/system/vendor/etc/dolby/
 
 ## Troubleshooting
+- If SE policy patch doesn't work for your device, send logcats to dev, then try using force permissive method.
+  Run at Terminal Emulator before flash:
+  - `su`
+  - `setprop dolby.force.permissive 1`
 - If Dolby force close, just reinstall again.
 - Make sure manifest.xml is patched correctly.
 - Use Audio Compatibility Patch if you encounter processing problem.
-- If SE patch still fail even added to sepolicy.rule, then add `setenforce 0` to the top of service.sh. Give logcat before for fix.
 - If you have some issues, like ringtones, alarm tones doesn't work, or calls opposite person doesn't hear, [do this fix.](https://t.me/audioryukimods/543)
 
 ## Attention!
