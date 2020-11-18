@@ -7,7 +7,7 @@
 - Spoofing product model/brand/device/manufacturer, may break some system apps.
 
 ## Requirements
-- Android 8.1, 9, 10, 11 (Need test for Android 8.0)
+- Android 8.0 (not tested), 8.1, 9, 10, or 11
 - Magisk Installed
 
 ## Installation Guide
