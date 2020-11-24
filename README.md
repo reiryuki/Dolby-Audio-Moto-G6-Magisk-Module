@@ -41,6 +41,13 @@ https://play.google.com/store/apps/details?id=com.dp.logcatapp
   - `dumpsys media.audio_flinger`
 
 ## Credits
-- @guitardedhero for daxService.apk base
+- All people that helped and tested my modules
+
+## Groups discussion
+- https://t.me/joinchat/E-On6U9cxckhIlAnoPIYpw
+- https://t.me/@modsandco
+
+## Donate
+- https://www.paypal.me/reiryuki
 
 
