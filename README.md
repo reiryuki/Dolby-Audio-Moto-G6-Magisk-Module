@@ -15,7 +15,6 @@
 - Reboot
 - Install via Magisk Manager only
 - Reboot
-- Set Dolby Audio as default EQ if you have more than one EQ
 
 ## Optional
 - If using multiple audio mods, use one of these bellow, don't use both:
