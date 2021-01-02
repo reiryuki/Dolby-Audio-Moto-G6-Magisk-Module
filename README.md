@@ -3,7 +3,6 @@
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
 - Doesn't support dynamic partitions
-- Doesn't support USB type C wired
 - Spoofing product model/brand/device/manufacturer, may break some system apps.
 
 ## Requirements
@@ -20,7 +19,43 @@
 - If using multiple audio mods, use one of these bellow, don't use both:
   - AML 4.0 supported
   - ACDB supported (Android 10 and bellow only for now)
-- You can rename dax-default extension to use more bass enhancer boost. See /data/adb/modules_update/DolbyAudio/system/vendor/etc/dolby/
+- If your ROM has Dolby in-built, or Dolby effects are not triggered, then you need to enable Dolby data clean-up for the first time. Run at Terminal Emulator before flashing
+  the module:
+
+  `su`
+
+  `setprop` `dolby.force.cleanup` `1`
+
+  After that, flash/reflash the module.
+
+- You can rename any dax-default extension to .xml to use more bass enhancer boost. See /data/adb/modules_update/DolbyAtmos/system/vendor/etc/dolby/. Rename another .xml to .mod. Delete /data/vendor/media/dax_sqlite3.db if there before reboot. 96 is a standard high bass.
+- You can use black themed UI. To enable that, run at Terminal Emulator before flashing
+  the module:
+
+  `su`
+
+  `setprop` `dolby.force.blackui` `1`
+
+  After that, flash/reflash the module.
+
+- You can disable your in-built Dirac audio FX if you sure it's conflicting with Dolby. Run at Terminal Emulator before flashing
+  the module:
+
+  `su`
+
+  `setprop` `dolby.force.disable.dirac` `1`
+
+  After that, flash/reflash the module.
+
+- You can disable your in-built MI Sound FX if you sure it's conflicting with Dolby. Run at Terminal Emulator before flashing
+  the module:
+
+  `su`
+
+  `setprop` `dolby.force.disable.misoundfx` `1`
+
+  After that, flash/reflash the module.
+
 
 ## Troubleshooting
 - If SE policy patch doesn't work for your device, send logcats to dev, then try using force permissive method.
