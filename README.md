@@ -76,6 +76,7 @@ https://play.google.com/store/apps/details?id=com.dp.logcatapp
 
 ## Credits
 - All people that helped and tested my modules
+- @aip_x for modified black themed UI
 
 ## Telegram
 - https://t.me/audioryukimods
