@@ -11,7 +11,7 @@
 
 ## Installation Guide
 - Remove another Dolby module
-- Reboot
+- Reboot (v1.6 and up no need)
 - Install via Magisk Manager only
 - Reboot
 
@@ -60,12 +60,14 @@
 ## Troubleshooting
 - If SE policy patch doesn't work for your device, send logcats to dev, then try using force permissive method.
   Run at Terminal Emulator before flash:
+
   - `su`
+
   - `setprop dolby.force.permissive 1`
+
+  Reflash after
 - If Dolby force close, just reinstall again.
 - Make sure manifest.xml is patched correctly.
-- Use Audio Compatibility Patch if you encounter processing problem.
-- If you have some issues, like ringtones, alarm tones doesn't work, or calls opposite person doesn't hear, [do this fix.](https://t.me/audioryukimods/543)
 
 ## Attention!
 - Reporting anything without sending full logcats and install process logs is ignored!
