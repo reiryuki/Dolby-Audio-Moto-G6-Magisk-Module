@@ -11,7 +11,7 @@
 
 ## Installation Guide
 - Remove another Dolby module
-- Reboot (v1.6 and up no need)
+- Reboot
 - Install via Magisk Manager only
 - Reboot
 
