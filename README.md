@@ -4,6 +4,9 @@
 - An EQ ported from Motorola G6 (ali)
 - Spoofing product model/brand/device/manufacturer, may break some system apps and platform features
 
+## Screenshots
+- https://t.me/audioryukimods/610
+
 ## Requirements
 - Android 8.0 (not tested), 8.1 (not tested), 9, 10, or 11
 - Magisk Installed
