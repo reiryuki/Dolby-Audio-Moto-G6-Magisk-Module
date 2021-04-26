@@ -2,6 +2,7 @@
 
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
+- Global type soundfx
 - Spoofing product model/brand/device/manufacturer, may break some system apps and platform features
 
 ## Screenshots
@@ -24,7 +25,7 @@
 ## Troubleshootings
 - https://t.me/audioryukimods/2617
 
-## Report Guide
+## Bug Report
 - https://t.me/audioryukimods/2618
 - If you don't do above, it will be closed immediately
 
@@ -34,11 +35,10 @@
 - @aip_x
 - @aquahol
 - @BanCodrut
+- @adi153
 
-## Thanks for Supports
+## Thanks for Donations
 - https://t.me/audioryukimods/2619
-
-## Donate
 - https://www.paypal.me/reiryuki
 
 
