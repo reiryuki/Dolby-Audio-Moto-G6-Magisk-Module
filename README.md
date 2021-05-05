@@ -3,7 +3,7 @@
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
 - Global type soundfx
-- Spoofing product model/brand/device/manufacturer, may break some system apps and platform features
+- Spoofing ro.product.model/brand/device/manufacturer, may break some system apps and platform features
 
 ## Screenshots
 - https://t.me/audioryukimods/610
@@ -11,6 +11,9 @@
 ## Requirements
 - Android 11, 10, 9, & 8
 - Magisk Installed
+
+## Warning!!!
+- Prepare for possibility of bootloop or even brick because this is not a pure Magisk Module
 
 ## Installation Guide
 - Remove another Dolby module with different name
