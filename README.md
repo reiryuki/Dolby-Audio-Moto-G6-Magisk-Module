@@ -9,7 +9,7 @@
 - https://t.me/audioryukimods/610
 
 ## Requirements
-- Android 11, 10, 9, & 8
+- Android 8 until 12
 - Magisk Installed
 
 ## Warning!!!
