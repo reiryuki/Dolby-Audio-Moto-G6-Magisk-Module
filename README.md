@@ -16,7 +16,7 @@
 - Prepare for possibility of bootloop or even brick because this is not a pure Magisk Module
 
 ## Installation Guide
-- Remove another Dolby module with different name
+- Remove any other Dolby module with different name
 - Reboot
 - Install via Magisk Manager or Recovery
 - See "Troubleshootings" section if you using other audio mods
