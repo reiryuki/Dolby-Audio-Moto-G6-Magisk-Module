@@ -254,7 +254,22 @@ else
   MAGISKTMP=`find /dev -mindepth 2 -maxdepth 2 -type d -name .magisk`
 fi
 
+# function
+set_read_write() {
+for NAMES in $NAME; do
+  blockdev --setrw $DIR$NAMES
+done
+}
+
 # remount
+DIR=/dev/block/bootdevice/by-name
+NAME="/vendor$SLOT /cust$SLOT /system$SLOT /system_ext$SLOT"
+set_read_write
+DIR=/dev/block/mapper
+set_read_write
+DIR=$MAGISKTMP/block
+NAME="/vendor /system_root /system /system_ext"
+set_read_write
 mount -o rw,remount $MAGISKTMP/mirror/system
 mount -o rw,remount $MAGISKTMP/mirror/system_root
 mount -o rw,remount $MAGISKTMP/mirror/system_ext
@@ -404,6 +419,35 @@ if [ "$BOOTMODE" == true ]; then
   mount -o ro,remount /system_root
   mount -o ro,remount /system_ext
   mount -o ro,remount /vendor
+fi
+
+# function
+patch_file() {
+ui_print "- Patching"
+ui_print "$FILE"
+ui_print "  Changing $PROP"
+ui_print "  to $MODPROP"
+ui_print "  Please wait..."
+sed -i "s/$PROP/$MODPROP/g" $FILE
+ui_print " "
+}
+
+# patch
+if ! getprop | grep -Eq "dolby.patch\]: \[0"; then
+  FILE=`find $MODPATH -type f -name libswdap.so\
+        -o -name service.sh`
+  PROP=ro.product.brand
+  MODPROP=ro.product.dolby
+  patch_file
+  PROP=ro.product.device
+  MODPROP=ro.product.dolby2
+  patch_file
+  PROP=ro.product.manufacturer
+  MODPROP=ro.product.eqdolbyaudio
+  patch_file
+  PROP=ro.product.model
+  MODPROP=ro.product.audio
+  patch_file
 fi
 
 # function
