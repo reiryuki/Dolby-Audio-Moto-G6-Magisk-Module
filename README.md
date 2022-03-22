@@ -3,7 +3,6 @@
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
 - Global type soundfx
-- Spoofing ro.product.model/brand/device/manufacturer, may break some system apps and platform features
 
 ## Screenshots
 - https://t.me/androidryukimodsdiscussions/610
