@@ -12,24 +12,25 @@
 - Android 9 and up
 - Magisk Installed
 
-## Warning!!!
-- Prepare for possibility of bootloop or even brick because this is not a pure Magisk Module
-
 ## Installation Guide
-- Remove any other Dolby module with different name
+- Remove any other Dolby module with different name (no need to remove if it's the same name)
 - Reboot
 - Install via Magisk Manager or Recovery
-- See "Troubleshootings" bellow if using any other audio mods
-- Reboot (reboot twice don't reflash, if you have Magisk sepolicy.rule bug)
+- Install AML module only if using any other audio mod modules
+- Reboot
 
 ## Tested on
 - Android 10 CrDroid ROM
 - Android 11 DotOS ROM
+- Android 12 AncientOS ROM
 
 ## Optionals
+- https://t.me/androidryukimodsdiscussions/60861
 - https://t.me/androidryukimodsdiscussions/2616
+- https://t.me/androidryukimodsdiscussions/26764
 
 ## Troubleshootings
+- https://t.me/androidryukimodsdiscussions/29836
 - https://t.me/androidryukimodsdiscussions/2617
 
 ## Bug Report
