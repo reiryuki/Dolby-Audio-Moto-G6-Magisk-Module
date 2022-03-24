@@ -646,10 +646,10 @@ fi
 # ui app
 if getprop | grep -Eq "dolby.blackui\]: \[1"; then
   ui_print "- Using black themed UI"
-  cp -rf $MODPATH/systemblack/* $MODPATH/system
+  cp -rf $MODPATH/system_black/* $MODPATH/system
   ui_print " "
 fi
-rm -rf $MODPATH/systemblack
+rm -rf $MODPATH/system_black
 
 # stream mode
 FILE=$MODPATH/.aml.sh
