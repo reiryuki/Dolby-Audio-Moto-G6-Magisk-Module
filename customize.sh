@@ -62,11 +62,11 @@ APP="`ls $MODPATH/system/priv-app` `ls $MODPATH/system/app`"
 PKG="com.dolby.dax2appUI
      com.dolby.daxservice
      com.motorola.motosignature.app"
-for PKGS in $PKG; do
-  if [ "$BOOTMODE" == true ]; then
-    UNINSTALL=`pm uninstall $PKGS`
-  fi
-done
+if [ "$BOOTMODE" == true ]; then
+  for PKGS in $PKG; do
+    RES=`pm uninstall $PKGS`
+  done
+fi
 for APPS in $APP; do
   rm -f `find /data/dalvik-cache /data/resource-cache -type f -name *$APPS*.apk`
 done
