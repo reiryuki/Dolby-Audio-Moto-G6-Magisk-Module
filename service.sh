@@ -24,6 +24,9 @@ resetprop audio.dolby.ds2.hardbypass true
 resetprop vendor.audio.dolby.ds2.enabled true
 resetprop vendor.audio.dolby.ds2.hardbypass true
 
+# restart
+killall audioserver
+
 # stop
 NAME=dms-hal-2-0
 if getprop | grep "init.svc.$NAME\]: \[running"; then
@@ -35,18 +38,19 @@ run_service() {
 if getprop | grep "init.svc.$NAME\]: \[stopped"; then
   start $NAME
 fi
-PID=`pidof $FILE`
+PID=`pidof $SERV`
 if [ ! "$PID" ]; then
   $FILE &
+  PID=`pidof $SERV`
 fi
-PID=`pidof $FILE`
 resetprop init.svc.$NAME running
 resetprop init.svc_debug_pid.$NAME "$PID"
 }
 
 # run
 NAME=dms-hal-1-0
-FILE=/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
+SERV=vendor.dolby.hardware.dms@1.0-service
+FILE=/vendor/bin/hw/$SERV
 run_service
 
 # wait
@@ -66,6 +70,7 @@ if [ "`realpath /odm/etc`" != /vendor/odm/etc ] && [ "$FILE" ]; then
     umount $j
     mount -o bind $i $j
   done
+  killall audioserver
 fi
 if [ ! -d $AML ] || [ -f $AML/disable ]; then
   DIR=$MODPATH/system
@@ -79,16 +84,29 @@ if [ -d /my_product/etc ] && [ "$FILE" ]; then
     umount /my_product$j
     mount -o bind $i /my_product$j
   done
+  killall audioserver
 fi
 
-# restart
-killall audioserver
+# run
+NAME=dms-hal-1-0
+SERV=vendor.dolby.hardware.dms@1.0-service
+FILE=/vendor/bin/hw/$SERV
+run_service
 
 # wait
 sleep 40
 
-# oom
+# allow
+PKG=com.dolby.dax2appUI
+if [ "$API" -ge 30 ]; then
+  appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
+fi
+
+# allow
 PKG=com.dolby.daxservice
+if [ "$API" -ge 30 ]; then
+  appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
+fi
 PID=`pidof $PKG`
 if [ $PID ]; then
   echo -17 > /proc/$PID/oom_adj

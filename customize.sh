@@ -282,34 +282,6 @@ if [ -f $FILE ]; then
   fi
 fi
 }
-patch_manifest_oreo() {
-if [ -f $FILE ]; then
-  backup
-  if [ -f $FILE.orig ] || [ -f $FILE.bak ]; then
-    ui_print "- Created"
-    ui_print "$FILE.orig"
-    ui_print " "
-    ui_print "- Patching"
-    ui_print "$FILE"
-    ui_print "  directly..."
-    sed -i '/<manifest/a\
-    <hal format="hidl">\
-        <name>vendor.dolby.hardware.dms</name>\
-        <transport>hwbinder</transport>\
-        <version>1.0</version>\
-        <interface>\
-            <name>IDms</name>\
-            <instance>default</instance>\
-        </interface>\
-    </hal>' $FILE
-    ui_print " "
-  else
-    ui_print "! Failed to create"
-    ui_print "$FILE.orig"
-    ui_print " "
-  fi
-fi
-}
 patch_hwservice() {
 if [ -f $FILE ]; then
   backup
@@ -368,71 +340,64 @@ find_file
 rm -rf $MODPATH/system_support
 
 # patch manifest.xml
-DIR="$MAGISKTMP/mirror/*/etc/vintf
-     $MAGISKTMP/mirror/*/*/etc/vintf
-     /*/etc/vintf
-     /*/*/etc/vintf"
-FILE="$MAGISKTMP/mirror/*/manifest.xml
-      $MAGISKTMP/mirror/*/*/manifest.xml
-      /*/manifest.xml
-      /*/*/manifest.xml"
 if [ "$API" -ge 28 ]; then
-  CHECK=@1.0::IDms/default
-  if ! grep -rEq "$CHECK" $DIR\
-  && ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-    FILE=$MAGISKTMP/mirror/vendor/etc/vintf/manifest.xml
-    patch_manifest
-  fi
-  if ! grep -rEq "$CHECK" $DIR\
-  && ! getprop | grep -Eq "dolby.skip.system\]: \[1"; then
-    FILE=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
-    patch_manifest
-  fi
-  if ! grep -rEq "$CHECK" $DIR\
-  && ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"; then
-    FILE=$MAGISKTMP/mirror/system_ext/etc/vintf/manifest.xml
-    patch_manifest
-  fi
-  if ! grep -rEq "$CHECK" $DIR\
-  && ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-    FILE=/vendor/etc/vintf/manifest.xml
-    patch_manifest
-  fi
-  if ! grep -rEq "$CHECK" $DIR\
-  && ! getprop | grep -Eq "dolby.skip.system\]: \[1"; then
-    FILE=/system/etc/vintf/manifest.xml
-    patch_manifest
-  fi
-  if ! grep -rEq "$CHECK" $DIR\
-  && ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"; then
-    FILE=/system/system_ext/etc/vintf/manifest.xml
-    patch_manifest
-  fi
+  FILE=`find $MAGISKTMP/mirror/*/etc/vintf\
+             $MAGISKTMP/mirror/*/*/etc/vintf\
+             /*/etc/vintf /*/*/etc/vintf -type f -name *.xml`
 else
-  CHECK=vendor.dolby.hardware.dms
-  if ! grep -Eq "$CHECK" $FILE\
-  && ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-    FILE=$MAGISKTMP/mirror/vendor/manifest.xml
-    patch_manifest_oreo
-  fi
-  if ! grep -Eq "$CHECK" $FILE\
-  && ! getprop | grep -Eq "dolby.skip.system\]: \[1"; then
-    FILE=$MAGISKTMP/mirror/system/manifest.xml
-    patch_manifest_oreo
-  fi
-  if ! grep -Eq "$CHECK" $FILE\
-  && ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-    FILE=/vendor/manifest.xml
-    patch_manifest_oreo
-  fi
-  if ! grep -Eq "$CHECK" $FILE\
-  && ! getprop | grep -Eq "dolby.skip.system\]: \[1"; then
-    FILE=/system/manifest.xml
-    patch_manifest_oreo
-  fi
+  FILE="$MAGISKTMP/mirror/*/manifest.xml
+        $MAGISKTMP/mirror/*/*/manifest.xml
+        /*/manifest.xml /*/*/manifest.xml"
 fi
-if ! grep -rEq "$CHECK" $DIR\
-&& ! grep -Eq "$CHECK" $FILE; then
+if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  if [ "$API" -ge 28 ]; then
+    FILE=$MAGISKTMP/mirror/vendor/etc/vintf/manifest.xml
+  else
+    FILE=$MAGISKTMP/mirror/vendor/manifest.xml
+  fi
+  patch_manifest
+fi
+if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  if [ "$API" -ge 28 ]; then
+    FILE=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
+  else
+    FILE=$MAGISKTMP/mirror/system/manifest.xml
+  fi
+  patch_manifest
+fi
+if [ "$API" -ge 28 ]\
+&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=$MAGISKTMP/mirror/system_ext/etc/vintf/manifest.xml
+  patch_manifest
+fi
+if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  if [ "$API" -ge 28 ]; then
+    FILE=/vendor/etc/vintf/manifest.xml
+  else
+    FILE=/vendor/manifest.xml
+  fi
+  patch_manifest
+fi
+if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  if [ "$API" -ge 28 ]; then
+    FILE=/system/etc/vintf/manifest.xml
+  else
+    FILE=/system/manifest.xml
+  fi
+  patch_manifest
+fi
+if [ "$API" -ge 28 ]\
+&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=/system/system_ext/etc/vintf/manifest.xml
+  patch_manifest
+fi
+if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
   ui_print "- Using systemless manifest.xml patch."
   ui_print "  On some ROMs, it's buggy or even makes bootloop"
   ui_print "  because not allowed to restart hwservicemanager."
@@ -440,57 +405,47 @@ if ! grep -rEq "$CHECK" $DIR\
 fi
 
 # patch hwservice contexts
-CHECK=u:object_r:hal_dms_hwservice:s0
-CHECK2=u:object_r:default_android_hwservice:s0
 FILE="$MAGISKTMP/mirror/*/etc/selinux/*_hwservice_contexts
       $MAGISKTMP/mirror/*/*/etc/selinux/*_hwservice_contexts
       /*/etc/selinux/*_hwservice_contexts
       /*/*/etc/selinux/*_hwservice_contexts"
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-  FILE=$MAGISKTMP/mirror/vendor/etc/selinux/vendor_hwservice_contexts
+if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  if [ "$API" -ge 28 ]; then
+    FILE=$MAGISKTMP/mirror/vendor/etc/selinux/vendor_hwservice_contexts
+  else
+    FILE=$MAGISKTMP/mirror/vendor/etc/selinux/nonplat_hwservice_contexts
+  fi
   patch_hwservice
 fi
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-  FILE=$MAGISKTMP/mirror/vendor/etc/selinux/nonplat_hwservice_contexts
-  patch_hwservice
-fi
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.system\]: \[1"; then
+if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
   patch_hwservice
 fi
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"; then
+if [ "$API" -ge 28 ]\
+&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=$MAGISKTMP/mirror/system_ext/etc/selinux/system_ext_hwservice_contexts
   patch_hwservice
 fi
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-  FILE=/vendor/etc/selinux/vendor_hwservice_contexts
+if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  if [ "$API" -ge 28 ]; then
+    FILE=/vendor/etc/selinux/vendor_hwservice_contexts
+  else
+    FILE=/vendor/etc/selinux/nonplat_hwservice_contexts
+  fi
   patch_hwservice
 fi
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"; then
-  FILE=/vendor/etc/selinux/nonplat_hwservice_contexts
-  patch_hwservice
-fi
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.system\]: \[1"; then
+if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=/system/etc/selinux/plat_hwservice_contexts
   patch_hwservice
 fi
-if ! grep -Eq "$CHECK" $FILE\
-&& ! grep -Eq "$CHECK2" $FILE\
-&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"; then
+if [ "$API" -ge 28 ]\
+&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=/system/system_ext/etc/selinux/system_ext_hwservice_contexts
   patch_hwservice
 fi

@@ -139,21 +139,21 @@ NAME=manifest.xml
 if [ "$API" -ge 28 ]; then
   M=$ETC/vintf/$NAME
   MODM=$MODETC/vintf/$NAME
-  CHECK=@1.0::IDms/default
+  FILE=`find $MAGISKTMP/mirror/*/etc/vintf\
+             $MAGISKTMP/mirror/*/*/etc/vintf\
+             /*/etc/vintf /*/*/etc/vintf -type f -name *.xml`
 else
   M=$MAGISKTMP/mirror/system/$NAME
   MODM=$MODPATH/system/$NAME
-  CHECK=vendor.dolby.hardware.dms
+  FILE="$MAGISKTMP/mirror/*/$NAME
+        $MAGISKTMP/mirror/*/*/$NAME
+        /*/$NAME /*/*/$NAME"
 fi
 rm -f $MODM
-if [ "$API" -ge 28 ]; then
-  if ! grep -r "$CHECK" $MAGISKTMP/mirror/*/etc/vintf\
-  && ! grep -r "$CHECK" $MAGISKTMP/mirror/*/*/etc/vintf\
-  && ! grep -r "$CHECK" /*/etc/vintf\
-  && ! grep -r "$CHECK" /*/*/etc/vintf; then
-    cp -f $M $MODM
-    if [ -f $MODM ]; then
-      sed -i '/<manifest/a\
+if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep 1.0; then
+  cp -f $M $MODM
+  if [ -f $MODM ]; then
+    sed -i '/<manifest/a\
     <hal format="hidl">\
         <name>vendor.dolby.hardware.dms</name>\
         <transport>hwbinder</transport>\
@@ -164,30 +164,12 @@ if [ "$API" -ge 28 ]; then
         </interface>\
         <fqname>@1.0::IDms/default</fqname>\
     </hal>' $MODM
+    if [ "$API" -ge 28 ]; then
       mount -o bind $MODM /system/etc/vintf/$NAME
-      killall hwservicemanager
-    fi
-  fi
-else
-  if ! grep "$CHECK" $MAGISKTMP/mirror/*/$NAME\
-  && ! grep "$CHECK" $MAGISKTMP/mirror/*/*/$NAME\
-  && ! grep "$CHECK" /*/$NAME\
-  && ! grep "$CHECK" /*/*/$NAME; then
-    cp -f $M $MODM
-    if [ -f $MODM ]; then
-      sed -i '/<manifest/a\
-    <hal format="hidl">\
-        <name>vendor.dolby.hardware.dms</name>\
-        <transport>hwbinder</transport>\
-        <version>1.0</version>\
-        <interface>\
-            <name>IDms</name>\
-            <instance>default</instance>\
-        </interface>\
-    </hal>' $MODM
+    else
       mount -o bind $MODM /system/$NAME
-      killall hwservicemanager
     fi
+    killall hwservicemanager
   fi
 fi
 
