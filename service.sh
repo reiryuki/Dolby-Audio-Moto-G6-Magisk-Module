@@ -7,13 +7,6 @@ AML=/data/adb/modules/aml
 exec 2>$MODPATH/debug.log
 set -x
 
-# prevent soft reboot
-echo 0 > /proc/sys/kernel/panic
-echo 0 > /proc/sys/kernel/panic_on_oops
-echo 0 > /proc/sys/kernel/panic_on_rcu_stall
-echo 0 > /proc/sys/kernel/panic_on_warn
-echo 0 > /proc/sys/vm/panic_on_oom
-
 # property
 resetprop ro.product.brand motorola
 resetprop ro.product.device ali
@@ -27,30 +20,28 @@ resetprop vendor.audio.dolby.ds2.hardbypass true
 # restart
 killall audioserver
 
-# stop
-NAME=dms-hal-2-0
+# function
+stop_service() {
 if getprop | grep "init.svc.$NAME\]: \[running"; then
   stop $NAME
 fi
-
-# function
+}
 run_service() {
-if getprop | grep "init.svc.$NAME\]: \[stopped"; then
-  start $NAME
-fi
-PID=`pidof $SERV`
-if [ ! "$PID" ]; then
-  $FILE &
-  PID=`pidof $SERV`
-fi
-resetprop init.svc.$NAME running
-resetprop init.svc_debug_pid.$NAME "$PID"
+killall $FILE
+$FILE &
+PID=`pidof $FILE`
 }
 
-# run
+# stop
 NAME=dms-hal-1-0
-SERV=vendor.dolby.hardware.dms@1.0-service
-FILE=/vendor/bin/hw/$SERV
+stop_service
+NAME=dms-hal-2-0
+stop_service
+NAME=dms-v36-hal-2-0
+stop_service
+
+# run
+FILE=/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
 run_service
 
 # wait
@@ -63,35 +54,37 @@ if [ ! -d $AML ] || [ -f $AML/disable ]; then
 else
   DIR=$AML/system/vendor
 fi
-FILE=`find $DIR/odm/etc -maxdepth 1 -type f -name $NAME`
-if [ "`realpath /odm/etc`" != /vendor/odm/etc ] && [ "$FILE" ]; then
-  for i in $FILE; do
-    j="$(echo $i | sed "s|$DIR||")"
-    umount $j
-    mount -o bind $i $j
-  done
-  killall audioserver
-fi
-if [ ! -d $AML ] || [ -f $AML/disable ]; then
-  DIR=$MODPATH/system
-else
-  DIR=$AML/system
-fi
 FILE=`find $DIR/etc -maxdepth 1 -type f -name $NAME`
+if [ `realpath /odm/etc` == /odm/etc ] && [ "$FILE" ]; then
+  for i in $FILE; do
+    j="/odm$(echo $i | sed "s|$DIR||")"
+    if [ -f $j ]; then
+      umount $j
+      mount -o bind $i $j
+    fi
+  done
+fi
 if [ -d /my_product/etc ] && [ "$FILE" ]; then
   for i in $FILE; do
-    j="$(echo $i | sed "s|$DIR||")"
-    umount /my_product$j
-    mount -o bind $i /my_product$j
+    j="/my_product$(echo $i | sed "s|$DIR||")"
+    if [ -f $j ]; then
+      umount $j
+      mount -o bind $i $j
+    fi
   done
+fi
+if ( [ `realpath /odm/etc` == /odm/etc ] && [ "$FILE" ] )\
+|| ( [ -d /my_product/etc ] && [ "$FILE" ] ); then
   killall audioserver
+  FILE=/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
+  run_service
 fi
 
-# run
-NAME=dms-hal-1-0
-SERV=vendor.dolby.hardware.dms@1.0-service
-FILE=/vendor/bin/hw/$SERV
-run_service
+# aml fix
+DIR=$AML/system/vendor/odm/etc
+if [ -d $DIR ] && [ ! -f $AML/disable ]; then
+  chcon -R u:object_r:vendor_configs_file:s0 $DIR
+fi
 
 # wait
 sleep 40
@@ -106,11 +99,6 @@ fi
 PKG=com.dolby.daxservice
 if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
-fi
-PID=`pidof $PKG`
-if [ $PID ]; then
-  echo -17 > /proc/$PID/oom_adj
-  echo -1000 > /proc/$PID/oom_score_adj
 fi
 
 ) 2>/dev/null

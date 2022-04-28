@@ -47,13 +47,7 @@ if [ "$MODAEC" ]; then
   sed -i "/^        fens {/ {;N s/        fens {\n        }//}" $MODAEC
   sed -i "/^        lmfv {/ {;N s/        lmfv {\n        }//}" $MODAEC
   sed -i "/^        dirac {/ {;N s/        dirac {\n        }//}" $MODAEC
-  sed -i 's/ring_helper { }//g' $MODAEC
-  sed -i 's/music_helper { }//g' $MODAEC
-  sed -i 's/voice_helper { }//g' $MODAEC
-  sed -i 's/notification_helper { }//g' $MODAEC
-  sed -i 's/sa3d {}//g' $MODAEC
-  sed -i 's/fens {}//g' $MODAEC
-  sed -i 's/lmfv {}//g' $MODAEC
+  sed -i "/^        dtsaudio {/ {;N s/        dtsaudio {\n        }//}" $MODAEC
   if ! grep -Eq '^output_session_processing {' $MODAEC; then
     sed -i -e '$a\
 output_session_processing {\
@@ -104,6 +98,7 @@ if [ "$MODAEX" ]; then
   sed -i 's/<apply effect="fens"\/>//g' $MODAEX
   sed -i 's/<apply effect="lmfv"\/>//g' $MODAEX
   sed -i 's/<apply effect="dirac"\/>//g' $MODAEX
+  sed -i 's/<apply effect="dtsaudio"\/>//g' $MODAEX
   if ! grep -Eq '<postprocess>' $MODAEX || grep -Eq '<!-- Audio post processor' $MODAEX; then
     sed -i '/<\/effects>/a\
     <postprocess>\
