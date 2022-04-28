@@ -1,7 +1,7 @@
 id=DolbyAudio
 name=Dolby Audio Moto G6
-version=v5.0
-versionCode=40
+version=v5.1-beta.1
+versionCode=41
 author=Rei Ryuki the Fixer
 description=An equalizer ported from Motorola G6 for any Android 9 and up.
 # Source: https://dumps.tadiphone.dev/dumps/motorola/ali user-9-PPS29.118-11-aa435-release-keys
