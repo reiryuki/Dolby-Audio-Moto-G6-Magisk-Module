@@ -148,4 +148,14 @@ if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep 1.0; then
   fi
 fi
 
+# AudioEffectCenter
+if [ -f /my_product/app/AudioEffectCenter/AudioEffectCenter.apk ]; then
+  mkdir $MODPATH/AudioEffectCenter
+  mount -o bind $MODPATH/AudioEffectCenter /my_product/app/AudioEffectCenter
+fi
+if [ -f /my_product/priv-app/AudioEffectCenter/AudioEffectCenter.apk ]; then
+  mkdir $MODPATH/AudioEffectCenter
+  mount -o bind $MODPATH/AudioEffectCenter /my_product/priv-app/AudioEffectCenter
+fi
+
 
