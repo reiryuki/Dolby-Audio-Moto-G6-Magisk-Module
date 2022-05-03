@@ -1,6 +1,3 @@
-(
-
-mount /data
 mount -o rw,remount /data
 MODPATH=${0%/*}
 MODID=`echo "$MODPATH" | sed -n -e 's/\/data\/adb\/modules\///p'`
@@ -117,7 +114,5 @@ if [ "$BOOTMODE" == true ]; then
   mount -o ro,remount /system_ext
   mount -o ro,remount /vendor
 fi
-
-) 2>/dev/null
 
 

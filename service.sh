@@ -1,6 +1,5 @@
-(
-
 MODPATH=${0%/*}
+API=`getprop ro.build.version.sdk`
 AML=/data/adb/modules/aml
 
 # debug
@@ -41,11 +40,17 @@ NAME=dms-v36-hal-2-0
 stop_service
 
 # run
-FILE=/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
+FILE=`realpath /vendor`/bin/hw/vendor.dolby.hardware.dms@1.0-service
 run_service
 
 # wait
 sleep 20
+
+# aml fix
+DIR=$AML/system/vendor/odm/etc
+if [ -d $DIR ] && [ ! -f $AML/disable ]; then
+  chcon -R u:object_r:vendor_configs_file:s0 $DIR
+fi
 
 # mount
 NAME="*audio*effects*.conf -o -name *audio*effects*.xml -o -name *policy*.conf -o -name *policy*.xml"
@@ -76,14 +81,8 @@ fi
 if ( [ `realpath /odm/etc` == /odm/etc ] && [ "$FILE" ] )\
 || ( [ -d /my_product/etc ] && [ "$FILE" ] ); then
   killall audioserver
-  FILE=/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
+  FILE=`realpath /vendor`/bin/hw/vendor.dolby.hardware.dms@1.0-service
   run_service
-fi
-
-# aml fix
-DIR=$AML/system/vendor/odm/etc
-if [ -d $DIR ] && [ ! -f $AML/disable ]; then
-  chcon -R u:object_r:vendor_configs_file:s0 $DIR
 fi
 
 # wait
@@ -100,7 +99,5 @@ PKG=com.dolby.daxservice
 if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
 fi
-
-) 2>/dev/null
 
 

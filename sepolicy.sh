@@ -6,7 +6,6 @@ magiskpolicy --live "type vendor_data_file"
 magiskpolicy --live "type vendor_media_data_file"
 magiskpolicy --live "type same_process_hal_file"
 magiskpolicy --live "type hal_dms_default_exec"
-magiskpolicy --live "type mediacodec_exec"
 
 # debug
 magiskpolicy --live "dontaudit system_server system_file file write"
