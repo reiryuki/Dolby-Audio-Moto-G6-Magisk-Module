@@ -43,6 +43,10 @@ stop_service
 FILE=`realpath /vendor`/bin/hw/vendor.dolby.hardware.dms@1.0-service
 run_service
 
+# restart
+VIBRATOR=`realpath /*/bin/hw/vendor.qti.hardware.vibrator.service*`
+[ "$VIBRATOR" ] && killall $VIBRATOR
+
 # wait
 sleep 20
 
@@ -83,6 +87,7 @@ if ( [ `realpath /odm/etc` == /odm/etc ] && [ "$FILE" ] )\
   killall audioserver
   FILE=`realpath /vendor`/bin/hw/vendor.dolby.hardware.dms@1.0-service
   run_service
+  [ "$VIBRATOR" ] && killall $VIBRATOR
 fi
 
 # wait
