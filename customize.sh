@@ -7,6 +7,9 @@ else
   MAGISKTMP=`find /dev -mindepth 2 -maxdepth 2 -type d -name .magisk`
 fi
 
+# optionals
+OPTIONALS=/sdcard/optionals.prop
+
 # info
 MODVER=`grep_prop version $MODPATH/module.prop`
 MODVERCODE=`grep_prop versionCode $MODPATH/module.prop`
@@ -36,7 +39,7 @@ if [ "$BOOTMODE" != true ]; then
 fi
 FILE=$MODPATH/sepolicy.sh
 DES=$MODPATH/sepolicy.rule
-if [ -f $FILE ] && ! getprop | grep -Eq "sepolicy.sh\]: \[1"; then
+if [ -f $FILE ] && [ "`grep_prop sepolicy.sh $OPTIONALS`" != 1 ]; then
   mv -f $FILE $DES
   sed -i 's/magiskpolicy --live "//g' $DES
   sed -i 's/"//g' $DES
@@ -46,7 +49,7 @@ fi
 mv -f $MODPATH/aml.sh $MODPATH/.aml.sh
 
 # mod ui
-if getprop | grep -Eq "mod.ui\]: \[1"; then
+if [ "`grep_prop mod.ui $OPTIONALS`" == 1 ]; then
   APP=DaxUI
   FILE=/sdcard/$APP.apk
   DIR=`find $MODPATH/system -type d -name $APP`
@@ -65,7 +68,6 @@ fi
 
 # cleaning
 ui_print "- Cleaning..."
-APP="`ls $MODPATH/system/priv-app` `ls $MODPATH/system/app`"
 PKG="com.dolby.dax2appUI
      com.dolby.daxservice
      com.motorola.motosignature.app"
@@ -74,11 +76,7 @@ if [ "$BOOTMODE" == true ]; then
     RES=`pm uninstall $PKGS`
   done
 fi
-for APPS in $APP; do
-  rm -f `find /data/dalvik-cache /data/resource-cache -type f -name *$APPS*.apk`
-done
 rm -f /data/vendor/media/dax_sqlite3.db
-rm -f $MODPATH/LICENSE
 rm -rf $MODPATH/unused
 rm -rf /metadata/magisk/$MODID
 rm -rf /mnt/vendor/persist/magisk/$MODID
@@ -143,13 +141,14 @@ fi
 # cleanup
 DIR=/data/adb/modules/$MODID
 FILE=$DIR/module.prop
-if getprop | grep -Eq "dolby.cleanup\]: \[1"; then
-  ui_print "- Cleaning-up Dolby data..."
+if [ "`grep_prop data.cleanup $OPTIONALS`" == 1 ]; then
+  sed -i 's/^data.cleanup=1/data.cleanup=0/' $OPTIONALS
+  ui_print "- Cleaning-up $MODID data..."
   cleanup
   ui_print " "
 elif [ -d $DIR ] && ! grep -Eq "$MODNAME" $FILE; then
   ui_print "- Different version detected"
-  ui_print "  Cleaning-up Dolby data..."
+  ui_print "  Cleaning-up $MODID data..."
   cleanup
   ui_print " "
 fi
@@ -200,15 +199,9 @@ for NAMES in $NAME; do
     fi
   fi
   if [ ! "$FILE" ]; then
-    PROP=`getprop install.hwlib`
-    if [ "$PROP" == 1 ]; then
+    if [ "`grep_prop install.hwlib $OPTIONALS`" == 1 ]; then
+      sed -i 's/^install.hwlib=1/install.hwlib=0/' $OPTIONALS
       ui_print "- Installing $NAMES directly to /system and /vendor..."
-      magiskpolicy --live "type same_process_hal_file"
-      magiskpolicy --live "type system_lib_file"
-      magiskpolicy --live "dontaudit { same_process_hal_file system_lib_file } labeledfs filesystem associate"
-      magiskpolicy --live "allow     { same_process_hal_file system_lib_file } labeledfs filesystem associate"
-      magiskpolicy --live "dontaudit init { same_process_hal_file system_lib_file } file relabelfrom"
-      magiskpolicy --live "allow     init { same_process_hal_file system_lib_file } file relabelfrom"
       if [ "$BOOTMODE" == true ]; then
         cp $MODPATH/system_support/lib/$NAMES $MAGISKTMP/mirror/system/lib
         cp $MODPATH/system_support/lib64/$NAMES $MAGISKTMP/mirror/system/lib64
@@ -228,11 +221,9 @@ for NAMES in $NAME; do
     else
       ui_print "! $NAMES not found."
       ui_print "  This module will not be working without $NAMES."
-      ui_print "  You can type terminal:"
-      ui_print " "
-      ui_print "  su"
-      ui_print "  setprop install.hwlib 1"
-      ui_print " "
+      ui_print "  You can type:"
+      ui_print "  install.hwlib=1"
+      ui_print "  inside $OPTIONALS"
       ui_print "  and reinstalling this module"
       ui_print "  to install $NAMES directly to this ROM."
       ui_print " "
@@ -306,13 +297,9 @@ done
 }
 
 # permissive
-if getprop | grep -Eq "permissive.mode\]: \[1"; then
+if [ "`grep_prop permissive.mode $OPTIONALS`" == 1 ]; then
   ui_print "- Using permissive method"
   rm -f $MODPATH/sepolicy.rule
-  permissive
-  ui_print " "
-elif getprop | grep -Eq "permissive.mode\]: \[2"; then
-  ui_print "- Using both permissive and SE policy patch"
   permissive
   ui_print " "
 fi
@@ -351,7 +338,7 @@ else
         $MAGISKTMP/mirror/*/*/manifest.xml
         /*/manifest.xml /*/*/manifest.xml"
 fi
-if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
 && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
   if [ "$API" -ge 28 ]; then
     FILE=$MAGISKTMP/mirror/vendor/etc/vintf/manifest.xml
@@ -360,7 +347,7 @@ if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
   fi
   patch_manifest
 fi
-if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
 && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
   if [ "$API" -ge 28 ]; then
     FILE=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
@@ -370,12 +357,12 @@ if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
   patch_manifest
 fi
 if [ "$API" -ge 28 ]\
-&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
 && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
   FILE=$MAGISKTMP/mirror/system_ext/etc/vintf/manifest.xml
   patch_manifest
 fi
-if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
 && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
   if [ "$API" -ge 28 ]; then
     FILE=/vendor/etc/vintf/manifest.xml
@@ -384,7 +371,7 @@ if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
   fi
   patch_manifest
 fi
-if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
 && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
   if [ "$API" -ge 28 ]; then
     FILE=/system/etc/vintf/manifest.xml
@@ -394,7 +381,7 @@ if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
   patch_manifest
 fi
 if [ "$API" -ge 28 ]\
-&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
 && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
   FILE=/system/system_ext/etc/vintf/manifest.xml
   patch_manifest
@@ -424,7 +411,7 @@ FILE="$MAGISKTMP/mirror/*/etc/selinux/*_hwservice_contexts
       $MAGISKTMP/mirror/*/*/etc/selinux/*_hwservice_contexts
       /*/etc/selinux/*_hwservice_contexts
       /*/*/etc/selinux/*_hwservice_contexts"
-if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
 && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   if [ "$API" -ge 28 ]; then
     FILE=$MAGISKTMP/mirror/vendor/etc/selinux/vendor_hwservice_contexts
@@ -433,18 +420,18 @@ if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
   fi
   patch_hwservice
 fi
-if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
 && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
   patch_hwservice
 fi
 if [ "$API" -ge 28 ]\
-&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
 && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=$MAGISKTMP/mirror/system_ext/etc/selinux/system_ext_hwservice_contexts
   patch_hwservice
 fi
-if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
 && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   if [ "$API" -ge 28 ]; then
     FILE=/vendor/etc/selinux/vendor_hwservice_contexts
@@ -453,13 +440,13 @@ if ! getprop | grep -Eq "dolby.skip.vendor\]: \[1"\
   fi
   patch_hwservice
 fi
-if ! getprop | grep -Eq "dolby.skip.system\]: \[1"\
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
 && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=/system/etc/selinux/plat_hwservice_contexts
   patch_hwservice
 fi
 if [ "$API" -ge 28 ]\
-&& ! getprop | grep -Eq "dolby.skip.system_ext\]: \[1"\
+&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
 && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
   FILE=/system/system_ext/etc/selinux/system_ext_hwservice_contexts
   patch_hwservice
@@ -490,7 +477,7 @@ ui_print " "
 }
 
 # patch
-if ! getprop | grep -Eq "dolby.patch\]: \[0"; then
+if [ "`grep_prop dolby.patch $OPTIONALS`" != 0 ]; then
   FILE=`find $MODPATH -type f -name libswdap.so -o -name service.sh`
   PROP=ro.product.brand
   MODPROP=ro.product.dolby
@@ -585,7 +572,8 @@ MODDIR=$MODPATH/system/vendor/euclid/product/app/$APPS
 replace_dir
 }
 check_app() {
-if [ "$BOOTMODE" == true ]; then
+if [ "$BOOTMODE" == true ]\
+&& [ "`grep_prop hide.parts $OPTIONALS`" == 1 ]; then
   for APPS in $APP; do
     FILE=`find $MAGISKTMP/mirror/system_root/system\
                $MAGISKTMP/mirror/system_root/product\
@@ -610,30 +598,30 @@ if [ "$BOOTMODE" == true ]\
 && dumpsys media.audio_flinger | grep -Eq $UUID; then
   ui_print "- $NAME is detected."
   ui_print "  It may be conflicting with this module."
-  ui_print "  You can run terminal:"
-  ui_print " "
-  ui_print "  su"
-  ui_print "  setprop disable.dirac 1"
-  ui_print " "
+  ui_print "  You can type:"
+  ui_print "  disable.dirac=1"
+  ui_print "  inside $OPTIONALS"
   ui_print "  and reinstall this module if you want to disable it."
   ui_print " "
 fi
 }
 
 # hide
+APP="`ls $MODPATH/system/priv-app` `ls $MODPATH/system/app`"
 hide_oat
 APP="MusicFX MotoDolbyDax3 MotoDolbyV3 OPSoundTuner
      DolbyAtmos daxUser AudioEffectCenter"
 for APPS in $APP; do
   hide_app
 done
-if ! getprop | grep -Eq "disable.dirac\]: \[0" && ! getprop | grep -Eq "disable.misoundfx\]: \[0"; then
+if [ "`grep_prop disable.dirac $OPTIONALS`" != 0 ]\
+&& [ "`grep_prop disable.misoundfx $OPTIONALS`" != 0 ]; then
   APP=MiSound
   for APPS in $APP; do
     hide_app
   done
 fi
-if ! getprop | grep -Eq "disable.dirac\]: \[0"; then
+if [ "`grep_prop disable.dirac $OPTIONALS`" != 0 ]; then
   APP="Dirac DiracAudioControlService"
   for APPS in $APP; do
     hide_app
@@ -642,15 +630,11 @@ fi
 
 # dirac & misoundfx
 FILE=$MODPATH/.aml.sh
-APP="XiaomiParts
-     ZenfoneParts
-     ZenParts
-     GalaxyParts
-     KharaMeParts
-     DeviceParts"
+APP="XiaomiParts ZenfoneParts ZenParts GalaxyParts
+     KharaMeParts DeviceParts PocoParts"
 NAME='dirac soundfx'
 UUID=e069d9e0-8329-11df-9168-0002a5d5c51b
-if ! getprop | grep -Eq "disable.dirac\]: \[0"; then
+if [ "`grep_prop disable.dirac $OPTIONALS`" != 0 ]; then
   ui_print "- $NAME will be disabled"
   sed -i 's/#2//g' $FILE
   check_app
@@ -661,7 +645,7 @@ fi
 FILE=$MODPATH/.aml.sh
 NAME=misoundfx
 UUID=5b8e36a5-144a-4c38-b1d7-0002a5d5c51b
-if ! getprop | grep -Eq "disable.misoundfx\]: \[0"; then
+if [ "`grep_prop disable.misoundfx $OPTIONALS`" != 0 ]; then
   ui_print "- $NAME will be disabled"
   sed -i 's/#3//g' $FILE
   check_app
@@ -671,11 +655,9 @@ else
   && dumpsys media.audio_flinger | grep -Eq $UUID; then
     ui_print "- $NAME is detected."
     ui_print "  It may be conflicting with this module."
-    ui_print "  You can run terminal:"
-    ui_print " "
-    ui_print "  su"
-    ui_print "  setprop disable.misoundfx 1"
-    ui_print " "
+    ui_print "  You can type:"
+    ui_print "  disable.misoundfx=1"
+    ui_print "  inside $OPTIONALS"
     ui_print "  and reinstall this module if you want to disable it."
     ui_print " "
   fi
@@ -685,7 +667,7 @@ fi
 FILE=$MODPATH/.aml.sh
 NAME='dirac_controller soundfx'
 UUID=b437f4de-da28-449b-9673-667f8b964304
-if ! getprop | grep -Eq "disable.dirac\]: \[0"; then
+if [ "`grep_prop disable.dirac $OPTIONALS`" != 0 ]; then
   ui_print "- $NAME will be disabled"
   ui_print " "
 else
@@ -696,7 +678,7 @@ fi
 FILE=$MODPATH/.aml.sh
 NAME='dirac_music soundfx'
 UUID=b437f4de-da28-449b-9673-667f8b9643fe
-if ! getprop | grep -Eq "disable.dirac\]: \[0"; then
+if [ "`grep_prop disable.dirac $OPTIONALS`" != 0 ]; then
   ui_print "- $NAME will be disabled"
   ui_print " "
 else
@@ -707,7 +689,7 @@ fi
 FILE=$MODPATH/.aml.sh
 NAME='dirac_gef soundfx'
 UUID=3799D6D1-22C5-43C3-B3EC-D664CF8D2F0D
-if ! getprop | grep -Eq "disable.dirac\]: \[0"; then
+if [ "`grep_prop disable.dirac $OPTIONALS`" != 0 ]; then
   ui_print "- $NAME will be disabled"
   ui_print " "
 else
@@ -715,7 +697,7 @@ else
 fi
 
 # ui app
-if getprop | grep -Eq "dolby.blackui\]: \[1"; then
+if [ "`grep_prop dolby.blackui $OPTIONALS`" == 1 ]; then
   ui_print "- Using black themed UI"
   cp -rf $MODPATH/system_black/* $MODPATH/system
   ui_print " "
@@ -724,7 +706,7 @@ rm -rf $MODPATH/system_black
 
 # stream mode
 FILE=$MODPATH/.aml.sh
-PROP=`getprop stream.mode`
+PROP=`grep_prop stream.mode $OPTIONALS`
 if echo "$PROP" | grep -Eq m; then
   ui_print "- Activating music stream..."
   sed -i 's/#m//g' $FILE
@@ -759,8 +741,8 @@ fi
 
 # settings
 FILE=$MODPATH/system/vendor/etc/dolby/dax-default.xml
-PROP=`getprop dolby.bass`
-if [ "$PROP" == default ]; then
+PROP=`grep_prop dolby.bass $OPTIONALS`
+if [ "$PROP" == def ]; then
   ui_print "- Using default settings for bass enhancer"
 elif [ "$PROP" == true ]; then
   ui_print "- Enable bass enhancer for all profiles"
@@ -778,38 +760,50 @@ else
   ui_print "- Disable bass enhancer for all profiles"
   sed -i 's/bass-enhancer-enable value="true"/bass-enhancer-enable value="false"/g' $FILE
 fi
-if getprop | grep -Eq "dolby.virtualizer\]: \[1"; then
+if [ "`grep_prop dolby.virtualizer $OPTIONALS`" == 1 ]; then
   ui_print "- Enable virtualizer for all profiles"
   sed -i 's/virtualizer_enable value="false"/virtualizer_enable value="true"/g' $FILE
-elif getprop | grep -Eq "dolby.virtualizer\]: \[0"; then
+elif [ "`grep_prop dolby.virtualizer $OPTIONALS`" == 0 ]; then
   ui_print "- Disable virtualizer for all profiles"
   sed -i 's/virtualizer_enable value="true"/virtualizer_enable value="false"/g' $FILE
 fi
-if getprop | grep -Eq "dolby.volumeleveler\]: \[1"; then
+if [ "`grep_prop dolby.volumeleveler $OPTIONALS`" == def ]; then
   ui_print "- Using default volume leveler settings"
-elif getprop | grep -Eq "dolby.volumeleveler\]: \[2"; then
+elif [ "`grep_prop dolby.volumeleveler $OPTIONALS`" == 1 ]; then
   ui_print "- Enable volume leveler for all profiles"
   sed -i 's/volume-leveler-enable value="false"/volume-leveler-enable value="true"/g' $FILE
 else
   ui_print "- Disable volume leveler for all profiles"
   sed -i 's/volume-leveler-enable value="true"/volume-leveler-enable value="false"/g' $FILE
 fi
-ui_print "- Using deeper bass GEQ frequency"
-sed -i 's/frequency="47"/frequency="0"/g' $FILE
-sed -i 's/frequency="141"/frequency="47"/g' $FILE
-sed -i 's/frequency="234"/frequency="141"/g' $FILE
-sed -i 's/frequency="328"/frequency="234"/g' $FILE
-sed -i 's/frequency="469"/frequency="328"/g' $FILE
-sed -i 's/frequency="656"/frequency="469"/g' $FILE
-sed -i 's/frequency="844"/frequency="656"/g' $FILE
-sed -i 's/frequency="1031"/frequency="844"/g' $FILE
-sed -i 's/frequency="1313"/frequency="1031"/g' $FILE
-sed -i 's/frequency="1688"/frequency="1313"/g' $FILE
-ui_print " "
+if [ "`grep_prop dolby.deepbass $OPTIONALS`" != 0 ]; then
+  ui_print "- Using deeper bass GEQ frequency"
+  sed -i 's/frequency="47"/frequency="0"/g' $FILE
+  sed -i 's/frequency="141"/frequency="47"/g' $FILE
+  sed -i 's/frequency="234"/frequency="141"/g' $FILE
+  sed -i 's/frequency="328"/frequency="234"/g' $FILE
+  sed -i 's/frequency="469"/frequency="328"/g' $FILE
+  sed -i 's/frequency="656"/frequency="469"/g' $FILE
+  sed -i 's/frequency="844"/frequency="656"/g' $FILE
+  sed -i 's/frequency="1031"/frequency="844"/g' $FILE
+  sed -i 's/frequency="1313"/frequency="1031"/g' $FILE
+  sed -i 's/frequency="1688"/frequency="1313"/g' $FILE
+  sed -i 's/frequency="2250"/frequency="1688"/g' $FILE
+  sed -i 's/frequency="3000"/frequency="2250"/g' $FILE
+  sed -i 's/frequency="3750"/frequency="3000"/g' $FILE
+  sed -i 's/frequency="4688"/frequency="3750"/g' $FILE
+  sed -i 's/frequency="5813"/frequency="4688"/g' $FILE
+  sed -i 's/frequency="7125"/frequency="5813"/g' $FILE
+  sed -i 's/frequency="9000"/frequency="7125"/g' $FILE
+  sed -i 's/frequency="11250"/frequency="9000"/g' $FILE
+  sed -i 's/frequency="13875"/frequency="11250"/g' $FILE
+  sed -i 's/frequency="19688"/frequency="13875"/g' $FILE
+  ui_print " "
+fi
 
 # audio rotation
 FILE=$MODPATH/service.sh
-if getprop | grep -Eq "audio.rotation\]: \[1"; then
+if [ "`grep_prop audio.rotation $OPTIONALS`" == 1 ]; then
   ui_print "- Activating ro.audio.monitorRotation=true"
   sed -i '1i\
 resetprop ro.audio.monitorRotation true' $FILE
@@ -818,7 +812,7 @@ fi
 
 # raw
 FILE=$MODPATH/.aml.sh
-if getprop | grep -Eq "disable.raw\]: \[0"; then
+if [ "`grep_prop disable.raw $OPTIONALS`" == 0 ]; then
   ui_print "- Not disabling Ultra Low Latency playback (RAW)"
   ui_print " "
 else
@@ -827,7 +821,7 @@ fi
 
 # other
 FILE=$MODPATH/service.sh
-if getprop | grep -Eq "other.etc\]: \[1"; then
+if [ "`grep_prop other.etc $OPTIONALS`" == 1 ]; then
   ui_print "- Activating other etc files bind mount..."
   sed -i 's/#p//g' $FILE
   ui_print " "
@@ -846,19 +840,6 @@ DIR=`find $MODPATH/system/vendor -type d`
 for DIRS in $DIR; do
   chown 0.2000 $DIRS
 done
-magiskpolicy --live "type system_lib_file"
-magiskpolicy --live "type vendor_file"
-magiskpolicy --live "type vendor_configs_file"
-magiskpolicy --live "dontaudit { system_lib_file vendor_file vendor_configs_file } labeledfs filesystem associate"
-magiskpolicy --live "allow     { system_lib_file vendor_file vendor_configs_file } labeledfs filesystem associate"
-magiskpolicy --live "dontaudit init { system_lib_file vendor_file vendor_configs_file } dir relabelfrom"
-magiskpolicy --live "allow     init { system_lib_file vendor_file vendor_configs_file } dir relabelfrom"
-magiskpolicy --live "dontaudit init { system_lib_file vendor_file vendor_configs_file } file relabelfrom"
-magiskpolicy --live "allow     init { system_lib_file vendor_file vendor_configs_file } file relabelfrom"
-chcon -R u:object_r:system_lib_file:s0 $MODPATH/system/lib*
-chcon -R u:object_r:vendor_file:s0 $MODPATH/system/vendor
-chcon -R u:object_r:vendor_configs_file:s0 $MODPATH/system/vendor/etc
-chcon -R u:object_r:vendor_configs_file:s0 $MODPATH/system/vendor/odm/etc
 ui_print " "
 
 # vendor_overlay
@@ -871,11 +852,12 @@ fi
 
 # uninstaller
 NAME=DolbyUninstaller.zip
-ui_print "- Flash /sdcard/$NAME"
-ui_print "  via recovery if you got bootloop"
 cp -f $MODPATH/$NAME /sdcard
 rm -f $MODPATH/$NAME
+ui_print "- Flash /sdcard/$NAME"
+ui_print "  via recovery if you got bootloop"
 ui_print " "
+
 
 
 
