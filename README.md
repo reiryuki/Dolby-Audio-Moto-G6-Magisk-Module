@@ -3,6 +3,7 @@
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
 - Global type soundfx
+- Source: https://github.com/reiryuki/Dolby-Audio-Moto-G6-Magisk-Module/blob/main/module.prop
 
 ## Screenshots
 - https://t.me/androidryukimodsdiscussions/610
