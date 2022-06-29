@@ -86,6 +86,7 @@ VIBRATOR=`realpath /*/bin/hw/vendor.qti.hardware.vibrator.service*`
 [ "$VIBRATOR" ] && killall $VIBRATOR
 POWER=`realpath /*/bin/hw/vendor.mediatek.hardware.mtkpower@*-service`
 [ "$POWER" ] && killall $POWER
+killall android.hardware.usb@1.0-service
 killall android.hardware.sensors@2.0-service-mediatek
 killall [chre_kthread] [scp_power_reset]
 killall [charger_in] [charger_thread] [tcpc_power_off]
