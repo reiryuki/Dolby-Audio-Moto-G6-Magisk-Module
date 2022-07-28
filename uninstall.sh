@@ -11,6 +11,7 @@ for PKGS in $PKG; do
   rm -rf /data/user/*/$PKGS
 done
 for APPS in $APP; do
+  rm -f `find /data/system/package_cache -type f -name *$APPS*`
   rm -f `find /data/dalvik-cache /data/resource-cache -type f -name *$APPS*.apk`
 done
 rm -rf /metadata/magisk/"$MODID"
@@ -88,18 +89,18 @@ done
 }
 
 # restore
-FILE=`find $MAGISKTMP/mirror/system\
-           $MAGISKTMP/mirror/system_ext\
-           $MAGISKTMP/mirror/vendor\
-           $MAGISKTMP/mirror/system_root/system\
-           $MAGISKTMP/mirror/system_root/system_ext\
-           $MAGISKTMP/mirror/system_root/vendor\
-           /system\
-           /system_ext\
-           /vendor\
-           /system_root/system\
-           /system_root/system_ext\
-           /system_root/vendor -type f -name manifest.xml -o -name *_hwservice_contexts -o -name *_file_contexts`
+FILE="$MAGISKTMP/mirror/*/manifest.xml
+      $MAGISKTMP/mirror/*/*/manifest.xml
+      /*/manifest.xml /*/*/manifest.xml
+      $MAGISKTMP/mirror/*/etc/vintf/manifest.xml
+      $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
+      /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
+      $MAGISKTMP/mirror/*/etc/selinux/*_hwservice_contexts
+      $MAGISKTMP/mirror/*/*/etc/selinux/*_hwservice_contexts
+      /*/etc/selinux/*_hwservice_contexts /*/*/etc/selinux/*_hwservice_contexts
+      $MAGISKTMP/mirror/*/etc/selinux/*_file_contexts
+      $MAGISKTMP/mirror/*/*/etc/selinux/*_file_contexts
+      /*/etc/selinux/*_file_contexts /*/*/etc/selinux/*_file_contexts"
 restore
 
 # remount

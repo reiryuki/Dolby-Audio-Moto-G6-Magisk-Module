@@ -117,19 +117,21 @@ if [ -f $FILE ]; then
 fi
 
 # patch manifest
-NAME=manifest.xml
 if [ "$API" -ge 28 ]; then
-  M=$ETC/vintf/$NAME
-  MODM=$MODETC/vintf/$NAME
-  FILE=`find $MAGISKTMP/mirror/*/etc/vintf\
-             $MAGISKTMP/mirror/*/*/etc/vintf\
-             /*/etc/vintf /*/*/etc/vintf -type f -name *.xml`
+  M=$ETC/vintf/manifest.xml
+  MODM=$MODETC/vintf/manifest.xml
+  FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
+        $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
+        /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
+        $MAGISKTMP/mirror/*/etc/vintf/manifest/*.xml
+        $MAGISKTMP/mirror/*/*/etc/vintf/manifest/*.xml
+        /*/etc/vintf/manifest/*.xml /*/*/etc/vintf/manifest/*.xml"
 else
-  M=$MAGISKTMP/mirror/system/$NAME
-  MODM=$MODPATH/system/$NAME
-  FILE="$MAGISKTMP/mirror/*/$NAME
-        $MAGISKTMP/mirror/*/*/$NAME
-        /*/$NAME /*/*/$NAME"
+  M=$MAGISKTMP/mirror/system/manifest.xml
+  MODM=$MODPATH/system/manifest.xml
+  FILE="$MAGISKTMP/mirror/*/manifest.xml
+        $MAGISKTMP/mirror/*/*/manifest.xml
+        /*/manifest.xml /*/*/manifest.xml"
 fi
 rm -f $MODM
 if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep 1.0; then
@@ -147,9 +149,9 @@ if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep 1.0; then
         <fqname>@1.0::IDms/default</fqname>\
     </hal>' $MODM
     if [ "$API" -ge 28 ]; then
-      mount -o bind $MODM /system/etc/vintf/$NAME
+      mount -o bind $MODM /system/etc/vintf/manifest.xml
     else
-      mount -o bind $MODM /system/$NAME
+      mount -o bind $MODM /system/manifest.xml
     fi
     killall hwservicemanager
   fi
