@@ -295,6 +295,35 @@ for FILES in $FILE; do
   fi
 done
 }
+early_init_mount_dir() {
+ACTIVEEIMDIR=$MAGISKTMP/mirror/early-mount
+if [ -L $ACTIVEEIMDIR ]; then
+  EIMDIR=$(readlink $ACTIVEEIMDIR)
+  [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MAGISKTMP/mirror/$EIMDIR"
+elif ! $ISENCRYPTED; then
+  EIMDIR=$NVBASE/modules/early-mount.d
+elif [ -d /data/unencrypted ] && ! grep ' /data ' /proc/mounts | grep -qE 'dm-|f2fs'; then
+  EIMDIR=/data/unencrypted/early-mount.d
+elif grep ' /cache ' /proc/mounts | grep -q 'ext4' ; then
+  EIMDIR=/cache/early-mount.d
+elif grep ' /metadata ' /proc/mounts | grep -q 'ext4' ; then
+  EIMDIR=/metadata/early-mount.d
+elif grep ' /persist ' /proc/mounts | grep -q 'ext4' ; then
+  EIMDIR=/persist/early-mount.d
+elif grep ' /mnt/vendor/persist ' /proc/mounts | grep -q 'ext4' ; then
+  EIMDIR=/mnt/vendor/persist/early-mount.d
+else
+  ui_print "- Unable to find early init mount directory"
+  return 1
+fi
+if [ -d ${EIMDIR%/early-mount.d} ]; then
+  ui_print "- EIMDIR=$EIMDIR"
+else
+  ui_print "- Unable to find early init mount directory ${EIMDIR%/early-mount.d}"
+  return 1
+fi
+ui_print " "
+}
 
 # permissive
 if [ "`grep_prop permissive.mode $OPTIONALS`" == 1 ]; then
@@ -329,6 +358,7 @@ find_file
 rm -rf $MODPATH/system_support
 
 # patch manifest.xml
+early_init_mount_dir
 if [ "$API" -ge 28 ]; then
   FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
         $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
@@ -341,63 +371,106 @@ else
         $MAGISKTMP/mirror/*/*/manifest.xml
         /*/manifest.xml /*/*/manifest.xml"
 fi
-if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+if [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0\
+&& echo $MAGISK_VER | grep -Eq delta; then
   if [ "$API" -ge 28 ]; then
-    FILE=$MAGISKTMP/mirror/vendor/etc/vintf/manifest.xml
+    SRC=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
   else
-    FILE=$MAGISKTMP/mirror/vendor/manifest.xml
+    SRC=$MAGISKTMP/mirror/system/manifest.xml
   fi
-  patch_manifest
-fi
-if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-  if [ "$API" -ge 28 ]; then
-    FILE=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
+  if [ -f $SRC ]; then
+    EIM=true
+    if [ "$API" -ge 28 ]; then
+      DIR=$EIMDIR/system/etc/vintf
+    else
+      DIR=$EIMDIR/system
+    fi
+    DES=$DIR/manifest.xml
+    mkdir -p $DIR
+    if [ ! -f $DES ]; then
+      cp -f $SRC $DIR
+    fi
+    if ! grep -A2 vendor.dolby.hardware.dms $DES | grep -Eq 1.0; then
+      ui_print "- Patching"
+      ui_print "$SRC"
+      ui_print "  systemlessly using early init mount..."
+      sed -i '/<manifest/a\
+    <hal format="hidl">\
+        <name>vendor.dolby.hardware.dms</name>\
+        <transport>hwbinder</transport>\
+        <version>1.0</version>\
+        <interface>\
+            <name>IDms</name>\
+            <instance>default</instance>\
+        </interface>\
+        <fqname>@1.0::IDms/default</fqname>\
+    </hal>' $DES
+      ui_print " "
+    fi
   else
-    FILE=$MAGISKTMP/mirror/system/manifest.xml
+    EIM=false
   fi
-  patch_manifest
 fi
-if [ "$API" -ge 28 ]\
-&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-  FILE=$MAGISKTMP/mirror/system_ext/etc/vintf/manifest.xml
-  patch_manifest
-fi
-if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-  if [ "$API" -ge 28 ]; then
-    FILE=/vendor/etc/vintf/manifest.xml
-  else
-    FILE=/vendor/manifest.xml
+if [ $EIM == false ]; then
+  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+    if [ "$API" -ge 28 ]; then
+      FILE=$MAGISKTMP/mirror/vendor/etc/vintf/manifest.xml
+    else
+      FILE=$MAGISKTMP/mirror/vendor/manifest.xml
+    fi
+    patch_manifest
   fi
-  patch_manifest
-fi
-if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-  if [ "$API" -ge 28 ]; then
-    FILE=/system/etc/vintf/manifest.xml
-  else
-    FILE=/system/manifest.xml
+  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+    if [ "$API" -ge 28 ]; then
+      FILE=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
+    else
+      FILE=$MAGISKTMP/mirror/system/manifest.xml
+    fi
+    patch_manifest
   fi
-  patch_manifest
-fi
-if [ "$API" -ge 28 ]\
-&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-  FILE=/system/system_ext/etc/vintf/manifest.xml
-  patch_manifest
-fi
-if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-  FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
-        $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
-        /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml"
-  restore
-  ui_print "- Using systemless manifest.xml patch."
-  ui_print "  On some ROMs, it's buggy or even makes bootloop"
-  ui_print "  because not allowed to restart hwservicemanager."
-  ui_print " "
+  if [ "$API" -ge 28 ]\
+  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+    FILE=$MAGISKTMP/mirror/system_ext/etc/vintf/manifest.xml
+    patch_manifest
+  fi
+  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+    if [ "$API" -ge 28 ]; then
+      FILE=/vendor/etc/vintf/manifest.xml
+    else
+      FILE=/vendor/manifest.xml
+    fi
+    patch_manifest
+  fi
+  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+    if [ "$API" -ge 28 ]; then
+      FILE=/system/etc/vintf/manifest.xml
+    else
+      FILE=/system/manifest.xml
+    fi
+    patch_manifest
+  fi
+  if [ "$API" -ge 28 ]\
+  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+    FILE=/system/system_ext/etc/vintf/manifest.xml
+    patch_manifest
+  fi
+  if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+    FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
+          $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
+          /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml"
+    restore
+    ui_print "- Using systemless manifest.xml patch."
+    ui_print "  On some ROMs, it's buggy or even makes bootloop"
+    ui_print "  because not allowed to restart hwservicemanager."
+    ui_print " "
+  fi
 fi
 
 # patch hwservice contexts
@@ -405,45 +478,71 @@ FILE="$MAGISKTMP/mirror/*/etc/selinux/*_hwservice_contexts
       $MAGISKTMP/mirror/*/*/etc/selinux/*_hwservice_contexts
       /*/etc/selinux/*_hwservice_contexts
       /*/*/etc/selinux/*_hwservice_contexts"
-if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-  if [ "$API" -ge 28 ]; then
-    FILE=$MAGISKTMP/mirror/vendor/etc/selinux/vendor_hwservice_contexts
+if [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE\
+&& echo $MAGISK_VER | grep -Eq delta; then
+  SRC=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
+  if [ -f $SRC ]; then
+    EIM=true
+    DIR=$EIMDIR/system/etc/selinux
+    DES=$DIR/plat_hwservice_contexts
+    mkdir -p $DIR
+    if [ ! -f $DES ]; then
+      cp -f $SRC $DIR
+    fi
+    if ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $DES; then
+      ui_print "- Patching"
+      ui_print "$SRC"
+      ui_print "  systemlessly using early init mount..."
+      sed -i '1i\
+vendor.dolby.hardware.dms::IDms u:object_r:hal_dms_hwservice:s0' $DES
+      ui_print " "
+    fi
   else
-    FILE=$MAGISKTMP/mirror/vendor/etc/selinux/nonplat_hwservice_contexts
+    EIM=false
   fi
-  patch_hwservice
 fi
-if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-  FILE=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
-  patch_hwservice
-fi
-if [ "$API" -ge 28 ]\
-&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-  FILE=$MAGISKTMP/mirror/system_ext/etc/selinux/system_ext_hwservice_contexts
-  patch_hwservice
-fi
-if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-  if [ "$API" -ge 28 ]; then
-    FILE=/vendor/etc/selinux/vendor_hwservice_contexts
-  else
-    FILE=/vendor/etc/selinux/nonplat_hwservice_contexts
+if [ $EIM == false ]; then
+  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+    if [ "$API" -ge 28 ]; then
+      FILE=$MAGISKTMP/mirror/vendor/etc/selinux/vendor_hwservice_contexts
+    else
+      FILE=$MAGISKTMP/mirror/vendor/etc/selinux/nonplat_hwservice_contexts
+    fi
+    patch_hwservice
   fi
-  patch_hwservice
-fi
-if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-  FILE=/system/etc/selinux/plat_hwservice_contexts
-  patch_hwservice
-fi
-if [ "$API" -ge 28 ]\
-&& [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-  FILE=/system/system_ext/etc/selinux/system_ext_hwservice_contexts
-  patch_hwservice
+  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+    FILE=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
+    patch_hwservice
+  fi
+  if [ "$API" -ge 28 ]\
+  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+    FILE=$MAGISKTMP/mirror/system_ext/etc/selinux/system_ext_hwservice_contexts
+    patch_hwservice
+  fi
+  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+    if [ "$API" -ge 28 ]; then
+      FILE=/vendor/etc/selinux/vendor_hwservice_contexts
+    else
+      FILE=/vendor/etc/selinux/nonplat_hwservice_contexts
+    fi
+    patch_hwservice
+  fi
+  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+    FILE=/system/etc/selinux/plat_hwservice_contexts
+    patch_hwservice
+  fi
+  if [ "$API" -ge 28 ]\
+  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+    FILE=/system/system_ext/etc/selinux/system_ext_hwservice_contexts
+    patch_hwservice
+  fi
 fi
 
 # remount
