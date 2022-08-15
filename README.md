@@ -11,11 +11,13 @@
 ## Requirements
 - Android 9 and up
 - Magisk Installed
+- Recommended to use Magisk Delta for the systemless early init mount manifest.xml https://t.me/androidryukimodsdiscussions/100091
 
 ## WARNING!!!
 - Possibility of bootloop or even softbrick or a service failure on Read-Only ROM.
 
 ## Installation Guide
+- Recommended to use Magisk Delta https://t.me/androidryukimodsdiscussions/100091
 - Remove any other Dolby module with different name (no need to remove if it's the same name)
 - Reboot
 - Install via Magisk Manager or Recovery
