@@ -1,5 +1,9 @@
 # Dolby Audio Moto G6 Magisk Module
 
+## DISCLAIMER
+- Dolby apps and blobs are owned by Dolby™.
+- The MIT license specified here is for the Magisk Module, not for Dolby apps and blobs.
+
 ## Descriptions
 - An EQ ported from Motorola G6 (ali)
 - Global type soundfx
