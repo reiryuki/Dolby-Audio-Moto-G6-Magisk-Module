@@ -4,7 +4,6 @@ MODPATH=${0%/*}
 MODAEC=`find $MODPATH/system -type f -name *audio*effects*.conf`
 MODAEX=`find $MODPATH/system -type f -name *audio*effects*.xml`
 MODAP=`find $MODPATH/system -type f -name *policy*.conf -o -name *policy*.xml`
-MODMC=$MODPATH/system/vendor/etc/media_codecs.xml
 LIBPATH="\/vendor\/lib\/soundfx"
 
 # function
@@ -196,7 +195,7 @@ if [ "$MODAEC" ]; then
 #n  sed -i "/^    notification {/a\        $NAME {\n        }" $MODAEC
 fi
 
-# patch effects xml
+# patch audio effects xml
 if [ "$MODAEX" ]; then
   remove_xml
   sed -i "/<libraries>/a\        <library name=\"$LIBNAME\" path=\"$LIB\"\/>" $MODAEX
@@ -213,15 +212,5 @@ fi
 #u  sed -i 's/RAW/NONE/g' $MODAP
 #u  sed -i 's/,raw//g' $MODAP
 #ufi
-
-# patch media codecs
-if [ -f $MODMC ]; then
-  sed -i '/<MediaCodecs>/a\
-    <Include href="media_codecs_dolby_audio.xml"/>' $MODMC
-fi
-
-
-
-
 
 

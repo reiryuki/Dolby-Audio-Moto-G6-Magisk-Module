@@ -2,7 +2,7 @@ mount -o rw,remount /data
 MODPATH=${0%/*}
 MODID=`echo "$MODPATH" | sed -n -e 's/\/data\/adb\/modules\///p'`
 APP="`ls $MODPATH/system/priv-app` `ls $MODPATH/system/app`"
-PKG="com.motorola.dolby.dolbyui
+PKG="com.dolby.dax2appUI
      com.dolby.daxservice
      com.motorola.motosignature.app"
      
@@ -20,8 +20,6 @@ rm -rf /persist/magisk/"$MODID"
 rm -rf /data/unencrypted/magisk/"$MODID"
 rm -rf /cache/magisk/"$MODID"
 rm -f /data/vendor/media/dax_sqlite3.db
-rm -rf /data/vendor/dolby
-resetprop -p --delete persist.vendor.audio_fx.current
 
 # boot mode
 if [ ! "$BOOTMODE" ]; then
@@ -91,7 +89,10 @@ done
 }
 
 # restore
-FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
+FILE="$MAGISKTMP/mirror/*/manifest.xml
+      $MAGISKTMP/mirror/*/*/manifest.xml
+      /*/manifest.xml /*/*/manifest.xml
+      $MAGISKTMP/mirror/*/etc/vintf/manifest.xml
       $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
       /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
       $MAGISKTMP/mirror/*/etc/selinux/*_hwservice_contexts

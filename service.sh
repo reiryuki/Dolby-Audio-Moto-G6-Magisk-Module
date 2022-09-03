@@ -7,9 +7,12 @@ exec 2>$MODPATH/debug.log
 set -x
 
 # property
-resetprop -p --delete persist.vendor.audio_fx.current
-resetprop -n persist.vendor.audio_fx.current dolby
-resetprop ro.vendor.dolby.dax.version DS1_2.3.0.0_r1
+resetprop ro.product.brand motorola
+resetprop ro.product.device ali
+resetprop ro.product.manufacturer motorola
+resetprop ro.product.model "moto g(6)"
+resetprop audio.dolby.ds2.enabled true
+resetprop audio.dolby.ds2.hardbypass true
 resetprop vendor.audio.dolby.ds2.enabled true
 resetprop vendor.audio.dolby.ds2.hardbypass true
 
@@ -92,23 +95,14 @@ CAMERA=`realpath /*/bin/hw/android.hardware.camera.provider@*-service_64`
 # wait
 sleep 40
 
-# grant
-PKG=com.dolby.daxservice
-pm grant $PKG android.permission.READ_EXTERNAL_STORAGE
-pm grant $PKG android.permission.WRITE_EXTERNAL_STORAGE
-if [ "$API" -ge 31 ]; then
-  pm grant $PKG android.permission.BLUETOOTH_CONNECT
-fi
+# allow
+PKG=com.dolby.dax2appUI
 if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
 fi
 
-# grant
-PKG=com.motorola.dolby.dolbyui
-if [ "$API" -ge 31 ]; then
-  pm grant $PKG android.permission.BLUETOOTH_CONNECT
-fi
-appops set $PKG SYSTEM_ALERT_WINDOW allow
+# allow
+PKG=com.dolby.daxservice
 if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
 fi
