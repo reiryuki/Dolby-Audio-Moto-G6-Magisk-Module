@@ -1,9 +1,8 @@
-id=DolbyAudio
-name=Dolby Audio Moto G6
-version=v5.5-beta.1
-versionCode=45
+id=MotoDolby
+name=Moto Dolby G Pro
+version=v5.6
+versionCode=46
 author=Rei Ryuki the Fixer
-description=An equalizer global type soundfx ported from Motorola G6 for any Android 9 and up.
-# Source: https://dumps.tadiphone.dev/dumps/motorola/ali user-9-PPS29.118-11-aa435-release-keys
+description=An equalizer global type soundfx ported from Motorola G Pro for any Android 9 and up, 64 bit architecture.
 
 

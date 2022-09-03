@@ -20,12 +20,19 @@ ui_print " MagiskVersion=$MAGISK_VER"
 ui_print " MagiskVersionCode=$MAGISK_VER_CODE"
 ui_print " "
 
+# bit
+if [ "$IS64BIT" != true ]; then
+  abort "- This module is only for 64 bit devices."
+else
+  ui_print "- 64 bit"
+  ui_print " "
+fi
+
 # sdk
-NUM=26
+NUM=28
 if [ "$API" -lt $NUM ]; then
   ui_print "! Unsupported SDK $API. You have to upgrade your"
-  ui_print "  Android version at least SDK API $NUM to use this"
-  ui_print "  module."
+  ui_print "  Android version at least SDK API $NUM to use this module."
   abort
 else
   ui_print "- SDK $API"
@@ -50,7 +57,7 @@ mv -f $MODPATH/aml.sh $MODPATH/.aml.sh
 
 # mod ui
 if [ "`grep_prop mod.ui $OPTIONALS`" == 1 ]; then
-  APP=DaxUI
+  APP=MotoDolbyV3
   FILE=/sdcard/$APP.apk
   DIR=`find $MODPATH/system -type d -name $APP`
   ui_print "- Using modified UI apk..."
@@ -68,7 +75,7 @@ fi
 
 # cleaning
 ui_print "- Cleaning..."
-PKG="com.dolby.dax2appUI
+PKG="com.motorola.dolby.dolbyui
      com.dolby.daxservice
      com.motorola.motosignature.app"
 if [ "$BOOTMODE" == true ]; then
@@ -77,6 +84,7 @@ if [ "$BOOTMODE" == true ]; then
   done
 fi
 rm -f /data/vendor/media/dax_sqlite3.db
+rm -f /data/vendor/dolby/dax_sqlite3.db
 rm -rf $MODPATH/unused
 rm -rf /metadata/magisk/$MODID
 rm -rf /mnt/vendor/persist/magisk/$MODID
@@ -112,7 +120,7 @@ done
 # conflict
 NAME="dolbyatmos
       DolbyAtmos
-      MotoDolby
+      DolbyAudio
       dsplus
       Dolby"
 conflict
@@ -152,6 +160,42 @@ elif [ -d $DIR ] && ! grep -Eq "$MODNAME" $FILE; then
   cleanup
   ui_print " "
 fi
+
+# check
+NAME=_ZN7android23sp_report_stack_pointerEv
+if [ "$BOOTMODE" == true ]; then
+  DIR=`realpath $MAGISKTMP/mirror/vendor`
+else
+  DIR=`realpath /vendor`
+fi
+ui_print "- Checking"
+ui_print "$NAME"
+ui_print "  function"
+ui_print "  Please wait..."
+if ! grep -Eq $NAME `find $DIR/lib*/hw -type f -name *audio*.so`\
+|| [ "`grep_prop dolby.10 $OPTIONALS`" == 1 ]; then
+  ui_print "  Using legacy libraries"
+  rm -f $MODPATH/system/vendor/lib64/libstagefright*.so
+  cp -rf $MODPATH/system_10/* $MODPATH/system
+fi
+rm -rf $MODPATH/system_10
+ui_print " "
+NAME=_ZN7android8hardware23getOrCreateCachedBinderEPNS_4hidl4base4V1_05IBaseE
+if [ "$BOOTMODE" == true ]; then
+  DIR=`realpath $MAGISKTMP/mirror/system`
+else
+  DIR=`realpath /system`
+fi
+ui_print "- Checking"
+ui_print "$NAME"
+ui_print "  function"
+ui_print "  Please wait..."
+if ! grep -Eq $NAME `find $DIR/lib64 -type f -name *audio*.so`; then
+  ui_print "  ! Function not found."
+  ui_print "  Unsupported ROM."
+  abort
+fi
+ui_print " "
 
 # function
 permissive() {
@@ -296,33 +340,204 @@ for FILES in $FILE; do
 done
 }
 early_init_mount_dir() {
-ACTIVEEIMDIR=$MAGISKTMP/mirror/early-mount
-if [ -L $ACTIVEEIMDIR ]; then
-  EIMDIR=$(readlink $ACTIVEEIMDIR)
-  [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MAGISKTMP/mirror/$EIMDIR"
-elif ! $ISENCRYPTED; then
-  EIMDIR=$NVBASE/modules/early-mount.d
-elif [ -d /data/unencrypted ] && ! grep ' /data ' /proc/mounts | grep -qE 'dm-|f2fs'; then
-  EIMDIR=/data/unencrypted/early-mount.d
-elif grep ' /cache ' /proc/mounts | grep -q 'ext4' ; then
-  EIMDIR=/cache/early-mount.d
-elif grep ' /metadata ' /proc/mounts | grep -q 'ext4' ; then
-  EIMDIR=/metadata/early-mount.d
-elif grep ' /persist ' /proc/mounts | grep -q 'ext4' ; then
-  EIMDIR=/persist/early-mount.d
-elif grep ' /mnt/vendor/persist ' /proc/mounts | grep -q 'ext4' ; then
-  EIMDIR=/mnt/vendor/persist/early-mount.d
+if echo $MAGISK_VER | grep -Eq delta; then
+  EIM=true
+  ACTIVEEIMDIR=$MAGISKTMP/mirror/early-mount
+  if [ -L $ACTIVEEIMDIR ]; then
+    EIMDIR=$(readlink $ACTIVEEIMDIR)
+    [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MAGISKTMP/mirror/$EIMDIR"
+  elif ! $ISENCRYPTED; then
+    EIMDIR=$NVBASE/modules/early-mount.d
+  elif [ -d /data/unencrypted ] && ! grep ' /data ' /proc/mounts | grep -qE 'dm-|f2fs'; then
+    EIMDIR=/data/unencrypted/early-mount.d
+  elif grep ' /cache ' /proc/mounts | grep -q 'ext4' ; then
+    EIMDIR=/cache/early-mount.d
+  elif grep ' /metadata ' /proc/mounts | grep -q 'ext4' ; then
+    EIMDIR=/metadata/early-mount.d
+  elif grep ' /persist ' /proc/mounts | grep -q 'ext4' ; then
+    EIMDIR=/persist/early-mount.d
+  elif grep ' /mnt/vendor/persist ' /proc/mounts | grep -q 'ext4' ; then
+    EIMDIR=/mnt/vendor/persist/early-mount.d
+  else
+    EIM=false
+    ui_print "- Unable to find early init mount directory"
+  fi
+  if [ -d ${EIMDIR%/early-mount.d} ]; then
+    ui_print "- Your early init mount directory is"
+    ui_print "  $EIMDIR"
+    ui_print " "
+    ui_print "  Any file stored to this directory will not be deleted even"
+    ui_print "  you have uninstalled this module. You can delete it"
+    ui_print "  manually using any root file manager."
+  else
+    EIM=false
+    ui_print "- Unable to find early init mount directory ${EIMDIR%/early-mount.d}"
+  fi
+  ui_print " "
 else
-  ui_print "- Unable to find early init mount directory"
-  return 1
+  EIM=false
 fi
-if [ -d ${EIMDIR%/early-mount.d} ]; then
-  ui_print "- EIMDIR=$EIMDIR"
+}
+find_file() {
+for NAMES in $NAME; do
+  if [ "$SYSTEM_ROOT" == true ]; then
+    if [ "$BOOTMODE" == true ]; then
+      FILE=`find $MAGISKTMP/mirror/system_root\
+                 $MAGISKTMP/mirror/system_ext\
+                 $MAGISKTMP/mirror/vendor -type f -name $NAMES`
+    else
+      FILE=`find /system_root\
+                 /system_ext\
+                 /vendor -type f -name $NAMES`
+    fi
+  else
+    if [ "$BOOTMODE" == true ]; then
+      FILE=`find $MAGISKTMP/mirror/system\
+                 $MAGISKTMP/mirror/system_ext\
+                 $MAGISKTMP/mirror/vendor -type f -name $NAMES`
+    else
+      FILE=`find /system\
+                 /system_ext\
+                 /vendor -type f -name $NAMES`
+    fi
+  fi
+  if [ ! "$FILE" ]; then
+    if [ "`grep_prop install.hwlib $OPTIONALS`" == 1 ]; then
+      sed -i 's/^install.hwlib=1/install.hwlib=0/' $OPTIONALS
+      ui_print "- Installing $NAMES directly to /system and /vendor..."
+      if [ "$BOOTMODE" == true ]; then
+        cp $MODPATH/system_support/lib/$NAMES $MAGISKTMP/mirror/system/lib
+        cp $MODPATH/system_support/lib64/$NAMES $MAGISKTMP/mirror/system/lib64
+        cp $MODPATH/system_support/vendor/lib/$NAMES $MAGISKTMP/mirror/vendor/lib
+        cp $MODPATH/system_support/vendor/lib64/$NAMES $MAGISKTMP/mirror/vendor/lib64
+        DES=$MAGISKTMP/mirror/system/lib/$NAMES
+        DES2=$MAGISKTMP/mirror/system/lib64/$NAMES
+        DES3=$MAGISKTMP/mirror/system/vendor/lib/$NAMES
+        DES4=$MAGISKTMP/mirror/system/vendor/lib64/$NAMES
+      else
+        cp $MODPATH/system_support/lib/$NAMES /system/lib
+        cp $MODPATH/system_support/lib64/$NAMES /system/lib64
+        cp $MODPATH/system_support/vendor/lib/$NAMES /vendor/lib
+        cp $MODPATH/system_support/vendor/lib64/$NAMES /vendor/lib64
+        DES=/system/lib/$NAMES
+        DES2=/system/lib64/$NAMES
+        DES3=/system/vendor/lib/$NAMES
+        DES4=/system/vendor/lib64/$NAMES
+      fi
+      if [ -f $MODPATH/system_support/lib/$NAMES ]\
+      && [ ! -f $DES ]; then
+        ui_print "  ! $DES"
+        ui_print "    installation failed."
+        if echo $MAGISK_VER | grep -Eq delta; then
+          ui_print "    Installing $NAMES systemlessly using early init mount..."
+          mkdir -p $EIMDIR/system/lib
+          cp $MODPATH/system_support/lib/$NAMES $EIMDIR/system/lib
+        fi
+      fi
+      if [ -f $MODPATH/system_support/lib64/$NAMES ]\
+      && [ ! -f $DES2 ]; then
+        ui_print "  ! $DES2"
+        ui_print "    installation failed."
+        if echo $MAGISK_VER | grep -Eq delta; then
+          ui_print "    Installing $NAMES systemlessly using early init mount..."
+          mkdir -p $EIMDIR/system/lib64
+          cp $MODPATH/system_support/lib64/$NAMES $EIMDIR/system/lib64
+        fi
+      fi
+      if [ -f $MODPATH/system_support/vendor/lib/$NAMES ]\
+      && [ ! -f $DES3 ]; then
+        ui_print "  ! $DES3"
+        ui_print "    installation failed."
+        if echo $MAGISK_VER | grep -Eq delta; then
+          ui_print "    Installing $NAMES systemlessly using early init mount..."
+          mkdir -p $EIMDIR/system/vendor/lib
+          cp $MODPATH/system_support/vendor/lib/$NAMES $EIMDIR/system/vendor/lib
+        fi
+      fi
+      if [ -f $MODPATH/system_support/vendor/lib64/$NAMES ]\
+      && [ ! -f $DES4 ]; then
+        ui_print "  ! $DES4"
+        ui_print "    installation failed."
+        if echo $MAGISK_VER | grep -Eq delta; then
+          ui_print "    Installing $NAMES systemlessly using early init mount..."
+          mkdir -p $EIMDIR/system/vendor/lib64
+          cp $MODPATH/system_support/vendor/lib64/$NAMES $EIMDIR/system/vendor/lib64
+        fi
+      fi
+      ui_print " "
+    else
+      ui_print "! $NAMES not found."
+      ui_print "  This module will not be working without $NAMES."
+      ui_print "  You can type:"
+      ui_print "  install.hwlib=1"
+      ui_print "  inside $OPTIONALS"
+      ui_print "  and reinstalling this module"
+      ui_print "  to install $NAMES directly to this ROM."
+      ui_print " "
+    fi
+  fi
+done
+}
+patch_manifest_overlay_d() {
+if [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]\
+&& echo $MAGISK_VER | grep -Eq delta; then
+  SRC=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
+  if [ -f $SRC ]; then
+    DIR=$EIMDIR/system/etc/vintf
+    DES=$DIR/manifest.xml
+    mkdir -p $DIR
+    if [ ! -f $DES ]; then
+      cp -f $SRC $DIR
+    fi
+    if ! grep -A2 vendor.dolby.hardware.dms $DES | grep -Eq 1.0; then
+      ui_print "- Patching"
+      ui_print "$SRC"
+      ui_print "  systemlessly using early init mount..."
+      sed -i '/<manifest/a\
+    <hal format="hidl">\
+        <name>vendor.dolby.hardware.dms</name>\
+        <transport>hwbinder</transport>\
+        <version>1.0</version>\
+        <interface>\
+            <name>IDms</name>\
+            <instance>default</instance>\
+        </interface>\
+        <fqname>@1.0::IDms/default</fqname>\
+    </hal>' $DES
+      ui_print " "
+    fi
+  else
+    EIM=false
+  fi
 else
-  ui_print "- Unable to find early init mount directory ${EIMDIR%/early-mount.d}"
-  return 1
+  EIM=false
 fi
-ui_print " "
+}
+patch_hwservice_overlay_d() {
+if [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]\
+&& echo $MAGISK_VER | grep -Eq delta; then
+  SRC=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
+  if [ -f $SRC ]; then
+    DIR=$EIMDIR/system/etc/selinux
+    DES=$DIR/plat_hwservice_contexts
+    mkdir -p $DIR
+    if [ ! -f $DES ]; then
+      cp -f $SRC $DIR
+    fi
+    if ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $DES; then
+      ui_print "- Patching"
+      ui_print "$SRC"
+      ui_print "  systemlessly using early init mount..."
+      sed -i '1i\
+vendor.dolby.hardware.dms::IDms u:object_r:hal_dms_hwservice:s0' $DES
+      ui_print " "
+    fi
+  else
+    EIM=false
+  fi
+else
+  EIM=false
+fi
 }
 
 # permissive
@@ -352,125 +567,65 @@ mount -o rw,remount /system_root
 mount -o rw,remount /system_ext
 mount -o rw,remount /vendor
 
+# early init mount dir
+early_init_mount_dir
+
 # find
+chcon -R u:object_r:system_lib_file:s0 $MODPATH/system_support/lib*
+chcon -R u:object_r:same_process_hal_file:s0 $MODPATH/system/vendor/lib*
 NAME=`ls $MODPATH/system_support/vendor/lib`
 find_file
 rm -rf $MODPATH/system_support
 
 # patch manifest.xml
-early_init_mount_dir
-if [ "$API" -ge 28 ]; then
-  FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
-        $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
-        /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
-        $MAGISKTMP/mirror/*/etc/vintf/manifest/*.xml
-        $MAGISKTMP/mirror/*/*/etc/vintf/manifest/*.xml
-        /*/etc/vintf/manifest/*.xml /*/*/etc/vintf/manifest/*.xml"
-else
-  FILE="$MAGISKTMP/mirror/*/manifest.xml
-        $MAGISKTMP/mirror/*/*/manifest.xml
-        /*/manifest.xml /*/*/manifest.xml"
+FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
+      $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
+      /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
+      $MAGISKTMP/mirror/*/etc/vintf/manifest/*.xml
+      $MAGISKTMP/mirror/*/*/etc/vintf/manifest/*.xml
+      /*/etc/vintf/manifest/*.xml /*/*/etc/vintf/manifest/*.xml"
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=$MAGISKTMP/mirror/vendor/etc/vintf/manifest.xml
+  patch_manifest
 fi
-if [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]\
-&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0\
-&& echo $MAGISK_VER | grep -Eq delta; then
-  if [ "$API" -ge 28 ]; then
-    SRC=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
-  else
-    SRC=$MAGISKTMP/mirror/system/manifest.xml
-  fi
-  if [ -f $SRC ]; then
-    EIM=true
-    if [ "$API" -ge 28 ]; then
-      DIR=$EIMDIR/system/etc/vintf
-    else
-      DIR=$EIMDIR/system
-    fi
-    DES=$DIR/manifest.xml
-    mkdir -p $DIR
-    if [ ! -f $DES ]; then
-      cp -f $SRC $DIR
-    fi
-    if ! grep -A2 vendor.dolby.hardware.dms $DES | grep -Eq 1.0; then
-      ui_print "- Patching"
-      ui_print "$SRC"
-      ui_print "  systemlessly using early init mount..."
-      sed -i '/<manifest/a\
-    <hal format="hidl">\
-        <name>vendor.dolby.hardware.dms</name>\
-        <transport>hwbinder</transport>\
-        <version>1.0</version>\
-        <interface>\
-            <name>IDms</name>\
-            <instance>default</instance>\
-        </interface>\
-        <fqname>@1.0::IDms/default</fqname>\
-    </hal>' $DES
-      ui_print " "
-    fi
-  else
-    EIM=false
-  fi
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
+  patch_manifest
 fi
-if [ $EIM == false ]; then
-  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-    if [ "$API" -ge 28 ]; then
-      FILE=$MAGISKTMP/mirror/vendor/etc/vintf/manifest.xml
-    else
-      FILE=$MAGISKTMP/mirror/vendor/manifest.xml
-    fi
-    patch_manifest
-  fi
-  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-    if [ "$API" -ge 28 ]; then
-      FILE=$MAGISKTMP/mirror/system/etc/vintf/manifest.xml
-    else
-      FILE=$MAGISKTMP/mirror/system/manifest.xml
-    fi
-    patch_manifest
-  fi
-  if [ "$API" -ge 28 ]\
-  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-    FILE=$MAGISKTMP/mirror/system_ext/etc/vintf/manifest.xml
-    patch_manifest
-  fi
-  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-    if [ "$API" -ge 28 ]; then
-      FILE=/vendor/etc/vintf/manifest.xml
-    else
-      FILE=/vendor/manifest.xml
-    fi
-    patch_manifest
-  fi
-  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-    if [ "$API" -ge 28 ]; then
-      FILE=/system/etc/vintf/manifest.xml
-    else
-      FILE=/system/manifest.xml
-    fi
-    patch_manifest
-  fi
-  if [ "$API" -ge 28 ]\
-  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-  && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-    FILE=/system/system_ext/etc/vintf/manifest.xml
-    patch_manifest
-  fi
-  if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
-    FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
-          $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
-          /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml"
-    restore
+if [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=$MAGISKTMP/mirror/system_ext/etc/vintf/manifest.xml
+  patch_manifest
+fi
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=/vendor/etc/vintf/manifest.xml
+  patch_manifest
+fi
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=/system/etc/vintf/manifest.xml
+  patch_manifest
+fi
+if [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+&& ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  FILE=/system/system_ext/etc/vintf/manifest.xml
+  patch_manifest
+fi
+if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -Eq 1.0; then
+  patch_manifest_overlay_d
+  if [ $EIM == false ]; then
     ui_print "- Using systemless manifest.xml patch."
     ui_print "  On some ROMs, it's buggy or even makes bootloop"
     ui_print "  because not allowed to restart hwservicemanager."
     ui_print " "
   fi
+  FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
+        $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
+        /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml"
+  restore
 fi
 
 # patch hwservice contexts
@@ -478,71 +633,47 @@ FILE="$MAGISKTMP/mirror/*/etc/selinux/*_hwservice_contexts
       $MAGISKTMP/mirror/*/*/etc/selinux/*_hwservice_contexts
       /*/etc/selinux/*_hwservice_contexts
       /*/*/etc/selinux/*_hwservice_contexts"
-if [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]\
-&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE\
-&& echo $MAGISK_VER | grep -Eq delta; then
-  SRC=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
-  if [ -f $SRC ]; then
-    EIM=true
-    DIR=$EIMDIR/system/etc/selinux
-    DES=$DIR/plat_hwservice_contexts
-    mkdir -p $DIR
-    if [ ! -f $DES ]; then
-      cp -f $SRC $DIR
-    fi
-    if ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $DES; then
-      ui_print "- Patching"
-      ui_print "$SRC"
-      ui_print "  systemlessly using early init mount..."
-      sed -i '1i\
-vendor.dolby.hardware.dms::IDms u:object_r:hal_dms_hwservice:s0' $DES
-      ui_print " "
-    fi
-  else
-    EIM=false
-  fi
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  FILE=$MAGISKTMP/mirror/vendor/etc/selinux/vendor_hwservice_contexts
+  patch_hwservice
 fi
-if [ $EIM == false ]; then
-  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-    if [ "$API" -ge 28 ]; then
-      FILE=$MAGISKTMP/mirror/vendor/etc/selinux/vendor_hwservice_contexts
-    else
-      FILE=$MAGISKTMP/mirror/vendor/etc/selinux/nonplat_hwservice_contexts
-    fi
-    patch_hwservice
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  FILE=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
+  patch_hwservice
+fi
+if [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  FILE=$MAGISKTMP/mirror/system_ext/etc/selinux/system_ext_hwservice_contexts
+  patch_hwservice
+fi
+if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  FILE=/vendor/etc/selinux/vendor_hwservice_contexts
+  patch_hwservice
+fi
+if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  FILE=/system/etc/selinux/plat_hwservice_contexts
+  patch_hwservice
+fi
+if [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
+&& ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  FILE=/system/system_ext/etc/selinux/system_ext_hwservice_contexts
+  patch_hwservice
+fi
+if ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
+  patch_hwservice_overlay_d
+  if [ $EIM == false ]; then
+    ui_print "! Failed to set hal_dms_hwservice context."
+    ui_print " "
   fi
-  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-    FILE=$MAGISKTMP/mirror/system/etc/selinux/plat_hwservice_contexts
-    patch_hwservice
-  fi
-  if [ "$API" -ge 28 ]\
-  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-    FILE=$MAGISKTMP/mirror/system_ext/etc/selinux/system_ext_hwservice_contexts
-    patch_hwservice
-  fi
-  if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
-  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-    if [ "$API" -ge 28 ]; then
-      FILE=/vendor/etc/selinux/vendor_hwservice_contexts
-    else
-      FILE=/vendor/etc/selinux/nonplat_hwservice_contexts
-    fi
-    patch_hwservice
-  fi
-  if [ "`grep_prop dolby.skip.system $OPTIONALS`" != 1 ]\
-  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-    FILE=/system/etc/selinux/plat_hwservice_contexts
-    patch_hwservice
-  fi
-  if [ "$API" -ge 28 ]\
-  && [ "`grep_prop dolby.skip.system_ext $OPTIONALS`" != 1 ]\
-  && ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $FILE; then
-    FILE=/system/system_ext/etc/selinux/system_ext_hwservice_contexts
-    patch_hwservice
-  fi
+  FILE="$MAGISKTMP/mirror/*/etc/selinux/*_hwservice_contexts
+        $MAGISKTMP/mirror/*/*/etc/selinux/*_hwservice_contexts
+        /*/etc/selinux/*_hwservice_contexts
+        /*/*/etc/selinux/*_hwservice_contexts"
+  restore
 fi
 
 # remount
@@ -556,34 +687,6 @@ if [ "$BOOTMODE" == true ]; then
   mount -o ro,remount /system_root
   mount -o ro,remount /system_ext
   mount -o ro,remount /vendor
-fi
-
-# function
-patch_file() {
-ui_print "- Patching"
-ui_print "$FILE"
-ui_print "  Changing $PROP"
-ui_print "  to $MODPROP"
-ui_print "  Please wait..."
-sed -i "s/$PROP/$MODPROP/g" $FILE
-ui_print " "
-}
-
-# patch
-if [ "`grep_prop dolby.patch $OPTIONALS`" != 0 ]; then
-  FILE=`find $MODPATH -type f -name libswdap.so -o -name service.sh`
-  PROP=ro.product.brand
-  MODPROP=ro.product.dolby
-  patch_file
-  PROP=ro.product.device
-  MODPROP=ro.product.dolby2
-  patch_file
-  PROP=ro.product.manufacturer
-  MODPROP=ro.product.eqdolbyaudio
-  patch_file
-  PROP=ro.product.model
-  MODPROP=ro.product.audio
-  patch_file
 fi
 
 # function
@@ -702,8 +805,7 @@ fi
 # hide
 APP="`ls $MODPATH/system/priv-app` `ls $MODPATH/system/app`"
 hide_oat
-APP="MusicFX MotoDolbyDax3 MotoDolbyV3 OPSoundTuner
-     DolbyAtmos daxUser AudioEffectCenter"
+APP="MusicFX MotoDolbyDax3 DaxUI OPSoundTuner DolbyAtmos AudioEffectCenter"
 for APPS in $APP; do
   hide_app
 done
@@ -789,14 +891,6 @@ else
   detect_soundfx
 fi
 
-# ui app
-if [ "`grep_prop dolby.blackui $OPTIONALS`" == 1 ]; then
-  ui_print "- Using black themed UI"
-  cp -rf $MODPATH/system_black/* $MODPATH/system
-  ui_print " "
-fi
-rm -rf $MODPATH/system_black
-
 # stream mode
 FILE=$MODPATH/.aml.sh
 PROP=`grep_prop stream.mode $OPTIONALS`
@@ -844,7 +938,11 @@ elif [ "$PROP" ] && [ "$PROP" != false ] && [ "$PROP" -gt 0 ]; then
   ui_print "- Enable bass enhancer for all profiles"
   sed -i 's/bass-enhancer-enable value="false"/bass-enhancer-enable value="true"/g' $FILE
   ui_print "- Changing bass enhancer boost values to $PROP for all profiles"
-  ROW="192 96"
+  ROW=`grep bass-enhancer-boost $FILE | sed 's/<bass-enhancer-boost value="0"\/>//p'`
+  echo $ROW > $TMPDIR/test
+  sed -i 's/<bass-enhancer-boost value="//g' $TMPDIR/test
+  sed -i 's/"\/>//g' $TMPDIR/test
+  ROW=`cat $TMPDIR/test`
   ui_print "  (Default values: $ROW)"
   for ROWS in $ROW; do
     sed -i "s/bass-enhancer-boost value=\"$ROWS\"/bass-enhancer-boost value=\"$PROP\"/g" $FILE
@@ -855,10 +953,10 @@ else
 fi
 if [ "`grep_prop dolby.virtualizer $OPTIONALS`" == 1 ]; then
   ui_print "- Enable virtualizer for all profiles"
-  sed -i 's/virtualizer_enable value="false"/virtualizer_enable value="true"/g' $FILE
+  sed -i 's/virtualizer-enable value="false"/virtualizer-enable value="true"/g' $FILE
 elif [ "`grep_prop dolby.virtualizer $OPTIONALS`" == 0 ]; then
   ui_print "- Disable virtualizer for all profiles"
-  sed -i 's/virtualizer_enable value="true"/virtualizer_enable value="false"/g' $FILE
+  sed -i 's/virtualizer-enable value="true"/virtualizer-enable value="false"/g' $FILE
 fi
 if [ "`grep_prop dolby.volumeleveler $OPTIONALS`" == def ]; then
   ui_print "- Using default volume leveler settings"
@@ -871,6 +969,26 @@ else
 fi
 if [ "`grep_prop dolby.deepbass $OPTIONALS`" != 0 ]; then
   ui_print "- Using deeper bass GEQ frequency"
+  sed -i 's/frequency="65"/frequency="0"/g' $FILE
+  sed -i 's/frequency="136"/frequency="65"/g' $FILE
+  sed -i 's/frequency="223"/frequency="136"/g' $FILE
+  sed -i 's/frequency="332"/frequency="223"/g' $FILE
+  sed -i 's/frequency="467"/frequency="332"/g' $FILE
+  sed -i 's/frequency="634"/frequency="467"/g' $FILE
+  sed -i 's/frequency="841"/frequency="634"/g' $FILE
+  sed -i 's/frequency="1098"/frequency="841"/g' $FILE
+  sed -i 's/frequency="1416"/frequency="1098"/g' $FILE
+  sed -i 's/frequency="1812"/frequency="1416"/g' $FILE
+  sed -i 's/frequency="2302"/frequency="1812"/g' $FILE
+  sed -i 's/frequency="2909"/frequency="2302"/g' $FILE
+  sed -i 's/frequency="3663"/frequency="2909"/g' $FILE
+  sed -i 's/frequency="4598"/frequency="3663"/g' $FILE
+  sed -i 's/frequency="5756"/frequency="4598"/g' $FILE
+  sed -i 's/frequency="7194"/frequency="5756"/g' $FILE
+  sed -i 's/frequency="8976"/frequency="7194"/g' $FILE
+  sed -i 's/frequency="11186"/frequency="8976"/g' $FILE
+  sed -i 's/frequency="13927"/frequency="11186"/g' $FILE
+  sed -i 's/frequency="17326"/frequency="13927"/g' $FILE
   sed -i 's/frequency="47"/frequency="0"/g' $FILE
   sed -i 's/frequency="141"/frequency="47"/g' $FILE
   sed -i 's/frequency="234"/frequency="141"/g' $FILE
@@ -893,6 +1011,12 @@ if [ "`grep_prop dolby.deepbass $OPTIONALS`" != 0 ]; then
   sed -i 's/frequency="19688"/frequency="13875"/g' $FILE
   ui_print " "
 fi
+# Already enabled
+#ui_print "- Increase maximum & minimum gain of Custom Manual GEQ"
+#sed -i 's/max_edit_gain="0"/max_edit_gain="576"/g' $FILE
+#sed -i 's/min_edit_gain="-96"/min_edit_gain="-576"/g' $FILE
+#sed -i 's/gain="-48"/gain="0"/g' $FILE
+#ui_print " "
 
 # audio rotation
 FILE=$MODPATH/service.sh
@@ -919,6 +1043,35 @@ if [ "`grep_prop other.etc $OPTIONALS`" == 1 ]; then
   sed -i 's/#p//g' $FILE
   ui_print " "
 fi
+
+# function
+file_check_vendor() {
+for NAMES in $NAME; do
+  if [ "$BOOTMODE" == true ]; then
+    FILE64=$MAGISKTMP/mirror/vendor/lib64/$NAMES
+    FILE=$MAGISKTMP/mirror/vendor/lib/$NAMES
+  else
+    FILE64=/vendor/lib64/$NAMES
+    FILE=/vendor/lib/$NAMES
+  fi
+  FILE64_2=/odm/lib64/$NAMES
+  FILE_2=/odm/lib/$NAMES
+  if [ -f $FILE64 ] || [ -f $FILE64_2 ]; then
+    ui_print "- Detected $NAMES 64 bit"
+    rm -f $MODPATH/system/vendor/lib64/$NAMES
+    ui_print " "
+  fi
+  if [ -f $FILE ] || [ -f $FILE_2 ]; then
+    ui_print "- Detected $NAMES"
+    rm -f $MODPATH/system/vendor/lib/$NAMES
+    ui_print " "
+  fi
+done
+}
+
+# check
+NAME="libstagefrightdolby.so libstagefright_soft_ddpdec.so"
+file_check_vendor
 
 # permission
 ui_print "- Setting permission..."
@@ -950,7 +1103,6 @@ rm -f $MODPATH/$NAME
 ui_print "- Flash /sdcard/$NAME"
 ui_print "  via recovery if you got bootloop"
 ui_print " "
-
 
 
 

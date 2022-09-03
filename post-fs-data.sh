@@ -1,6 +1,5 @@
 mount -o rw,remount /data
 MODPATH=${0%/*}
-API=`getprop ro.build.version.sdk`
 AML=/data/adb/modules/aml
 ACDB=/data/adb/modules/acdb
 
@@ -97,6 +96,19 @@ if [ "$SKU" ]; then
 fi
 rm -f `find $MODPATH/system -type f -name *policy*volumes*.xml`
 
+# media codecs
+NAME=media_codecs.xml
+rm -f $MODVETC/$NAME
+DIR=$AML/system/vendor/etc
+if [ -d $AML ] && [ ! -f $AML/disable ]; then
+  if [ ! -d $DIR ]; then
+    mkdir -p $DIR
+  fi
+  cp -f $VETC/$NAME $DIR
+else
+  cp -f $VETC/$NAME $MODVETC
+fi
+
 # run
 sh $MODPATH/.aml.sh
 
@@ -109,6 +121,15 @@ chmod 0770 $DIR
 chown 1046.1013 $DIR
 chcon u:object_r:vendor_media_data_file:s0 $DIR
 
+# directory
+DIR=/data/vendor/dolby
+if [ ! -d $DIR ]; then
+  mkdir -p $DIR
+fi
+chmod 0770 $DIR
+chown 1013.1013 $DIR
+chcon u:object_r:vendor_data_file:s0 $DIR
+
 # cleaning
 FILE=$MODPATH/cleaner.sh
 if [ -f $FILE ]; then
@@ -117,23 +138,15 @@ if [ -f $FILE ]; then
 fi
 
 # patch manifest
-if [ "$API" -ge 28 ]; then
-  M=$ETC/vintf/manifest.xml
-  MODM=$MODETC/vintf/manifest.xml
-  FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
-        $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
-        /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
-        $MAGISKTMP/mirror/*/etc/vintf/manifest/*.xml
-        $MAGISKTMP/mirror/*/*/etc/vintf/manifest/*.xml
-        /*/etc/vintf/manifest/*.xml /*/*/etc/vintf/manifest/*.xml"
-else
-  M=$MAGISKTMP/mirror/system/manifest.xml
-  MODM=$MODPATH/system/manifest.xml
-  FILE="$MAGISKTMP/mirror/*/manifest.xml
-        $MAGISKTMP/mirror/*/*/manifest.xml
-        /*/manifest.xml /*/*/manifest.xml"
-fi
+M=$ETC/vintf/manifest.xml
+MODM=$MODETC/vintf/manifest.xml
 rm -f $MODM
+FILE="$MAGISKTMP/mirror/*/etc/vintf/manifest.xml
+      $MAGISKTMP/mirror/*/*/etc/vintf/manifest.xml
+      /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
+      $MAGISKTMP/mirror/*/etc/vintf/manifest/*.xml
+      $MAGISKTMP/mirror/*/*/etc/vintf/manifest/*.xml
+      /*/etc/vintf/manifest/*.xml /*/*/etc/vintf/manifest/*.xml"
 if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep 1.0; then
   cp -f $M $MODM
   if [ -f $MODM ]; then
@@ -148,11 +161,7 @@ if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep 1.0; then
         </interface>\
         <fqname>@1.0::IDms/default</fqname>\
     </hal>' $MODM
-    if [ "$API" -ge 28 ]; then
-      mount -o bind $MODM /system/etc/vintf/manifest.xml
-    else
-      mount -o bind $MODM /system/manifest.xml
-    fi
+    mount -o bind $MODM /system/etc/vintf/manifest.xml
     killall hwservicemanager
   fi
 fi
