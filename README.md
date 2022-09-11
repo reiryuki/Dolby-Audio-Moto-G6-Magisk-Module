@@ -16,7 +16,7 @@
 
 ## Requirements
 - Android 9 and up
-- Magisk Installed
+- Magisk installed
 - Recommended to use Magisk Delta for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/androidryukimodsdiscussions/100091
 
 ## WARNING!!!
@@ -41,6 +41,7 @@
 
 ## Support & Bug Report
 - https://t.me/androidryukimodsdiscussions/2618
+- If you don't do above, issues will be closed immediately
 
 ## Tested on
 - Android 10 CrDroid ROM
