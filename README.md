@@ -5,7 +5,7 @@
 - The MIT license specified here is for the Magisk Module, not for Dolby apps and blobs.
 
 ## Descriptions
-- Dolby soundfx equalizer ported from Motorola Moto G6 (ali) and integrated as a Magisk Module for all supported and rooted devices with Magisk
+- Equalizer soundfx ported from Motorola Moto G6 (ali) and integrated as a Magisk Module for all supported and rooted devices with Magisk
 - Global type soundfx
 
 ## Sources

@@ -34,7 +34,7 @@ else
   DIR=$AML/system/vendor
 fi
 FILE=`find $DIR/etc -maxdepth 1 -type f -name $NAME`
-if [ `realpath /odm/etc` == /odm/etc ] && [ "$FILE" ]; then
+if [ "`realpath /odm/etc`" == /odm/etc ] && [ "$FILE" ]; then
   for i in $FILE; do
     j="/odm$(echo $i | sed "s|$DIR||")"
     if [ -f $j ]; then
@@ -87,8 +87,11 @@ VIBRATOR=`realpath /*/bin/hw/vendor.qti.hardware.vibrator.service*`
 POWER=`realpath /*/bin/hw/vendor.mediatek.hardware.mtkpower@*-service`
 [ "$POWER" ] && killall $POWER
 killall android.hardware.usb@1.0-service
+killall android.hardware.usb@1.0-service.basic
+killall android.hardware.sensors@1.0-service
 killall android.hardware.sensors@2.0-service-mediatek
 killall android.hardware.light-service.mt6768
+killall android.hardware.lights-service.xiaomi_mithorium
 CAMERA=`realpath /*/bin/hw/android.hardware.camera.provider@*-service_64`
 [ "$CAMERA" ] && killall $CAMERA
 
