@@ -1,6 +1,6 @@
 mount -o rw,remount /data
 MODPATH=${0%/*}
-MODID=`echo "$MODPATH" | sed -n -e 's/\/data\/adb\/modules\///p'`
+MODID=`echo "$MODPATH" | sed 's|/data/adb/modules/||'`
 APP="`ls $MODPATH/system/priv-app` `ls $MODPATH/system/app`"
 PKG="com.dolby.dax2appUI
      com.dolby.daxservice
@@ -31,7 +31,8 @@ if [ "$BOOTMODE" != true ]; then
   rm -rf `find /metadata/early-mount.d\
   /mnt/vendor/persist/early-mount.d /persist/early-mount.d\
   /data/unencrypted/early-mount.d /cache/early-mount.d\
-  /data/adb/modules/early-mount.d -type f -name manifest.xml`
+  /data/adb/modules/early-mount.d -type f -name manifest.xml\
+  -o -name libhidlbase.so`
 fi
 
 # magisk
