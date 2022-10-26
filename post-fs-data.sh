@@ -11,7 +11,7 @@ set -x
 # run
 FILE=$MODPATH/sepolicy.sh
 if [ -f $FILE ]; then
-  sh $FILE
+  . $FILE
 fi
 
 # context
@@ -25,15 +25,20 @@ chcon u:object_r:same_process_hal_file:s0 $MODPATH/system/vendor/lib*/libhidlbas
 chcon u:object_r:hal_dms_default_exec:s0 $MODPATH/system/vendor/bin/hw/vendor.dolby.hardware.dms@*-service
 chcon u:object_r:hal_dms_default_exec:s0 $MODPATH/system/vendor/odm/bin/hw/vendor.dolby_v3_6.hardware.dms360@2.0-service
 
-# etc
+# magisk
 if [ -d /sbin/.magisk ]; then
   MAGISKTMP=/sbin/.magisk
 else
-  MAGISKTMP=`find /dev -mindepth 2 -maxdepth 2 -type d -name .magisk`
+  MAGISKTMP=`realpath /dev/*/.magisk`
 fi
-ETC=$MAGISKTMP/mirror/system/etc
-VETC=$MAGISKTMP/mirror/system/vendor/etc
-VOETC=$MAGISKTMP/mirror/system/vendor/odm/etc
+
+# path
+MIRROR=$MAGISKTMP/mirror
+SYSTEM=`realpath $MIRROR/system`
+VENDOR=`realpath $MIRROR/vendor`
+ETC=$SYSTEM/etc
+VETC=$VENDOR/etc
+VOETC=$VENDOR/odm/etc
 MODETC=$MODPATH/system/etc
 MODVETC=$MODPATH/system/vendor/etc
 MODVOETC=$MODPATH/system/vendor/odm/etc
@@ -103,7 +108,7 @@ fi
 rm -f `find $MODPATH/system -type f -name *policy*volume*.xml -o -name *audio*effects*spatializer*.xml`
 
 # run
-sh $MODPATH/.aml.sh
+. $MODPATH/.aml.sh
 
 # directory
 DIR=/data/vendor/media
@@ -117,7 +122,7 @@ chcon u:object_r:vendor_media_data_file:s0 $DIR
 # cleaning
 FILE=$MODPATH/cleaner.sh
 if [ -f $FILE ]; then
-  sh $FILE
+  . $FILE
   rm -f $FILE
 fi
 

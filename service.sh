@@ -121,5 +121,6 @@ PKG=com.dolby.dax2appUI
 if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
 fi
+killall $PKG
 
 
