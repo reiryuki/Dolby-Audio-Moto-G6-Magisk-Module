@@ -19,9 +19,17 @@ fi
 SYSTEM=`realpath $MIRROR/system`
 PRODUCT=`realpath $MIRROR/product`
 VENDOR=`realpath $MIRROR/vendor`
-SYSTEM_EXT=`realpath $MIRROR/system/system_ext`
-ODM=`realpath /odm`
-MY_PRODUCT=`realpath /my_product`
+SYSTEM_EXT=`realpath $MIRROR/system_ext`
+if [ -d $MIRROR/odm ]; then
+  ODM=`realpath $MIRROR/odm`
+else
+  ODM=`realpath /odm`
+fi
+if [ -d $MIRROR/my_product ]; then
+  MY_PRODUCT=`realpath $MIRROR/my_product`
+else
+  MY_PRODUCT=`realpath /my_product`
+fi
 
 # optionals
 OPTIONALS=/sdcard/optionals.prop
@@ -110,7 +118,7 @@ conflict() {
 for NAMES in $NAME; do
   DIR=/data/adb/modules_update/$NAMES
   if [ -f $DIR/uninstall.sh ]; then
-    . $DIR/uninstall.sh
+    sh $DIR/uninstall.sh
   fi
   rm -rf $DIR
   DIR=/data/adb/modules/$NAMES
@@ -118,7 +126,7 @@ for NAMES in $NAME; do
   touch $DIR/remove
   FILE=/data/adb/modules/$NAMES/uninstall.sh
   if [ -f $FILE ]; then
-    . $FILE
+    sh $FILE
     rm -f $FILE
   fi
   rm -rf /metadata/magisk/$NAMES
@@ -143,18 +151,18 @@ if grep -Eq 'Dolby Atmos Xperia' $FILE; then
 fi
 NAME=MiSound
 FILE=/data/adb/modules/$NAME/module.prop
-if grep -Eq 'Mi Sound and Dolby Atmos' $FILE; then
+if grep -Eq 'and Dolby Atmos' $FILE; then
   conflict
 fi
 
 # function
 cleanup() {
 if [ -f $DIR/uninstall.sh ]; then
-  . $DIR/uninstall.sh
+  sh $DIR/uninstall.sh
 fi
 DIR=/data/adb/modules_update/$MODID
 if [ -f $DIR/uninstall.sh ]; then
-  . $DIR/uninstall.sh
+  sh $DIR/uninstall.sh
 fi
 }
 
@@ -309,35 +317,31 @@ if echo $MAGISK_VER | grep -Eq delta\
   if [ -L $ACTIVEEIMDIR ]; then
     EIMDIR=$(readlink $ACTIVEEIMDIR)
     [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MAGISKTMP/mirror/$EIMDIR"
-  elif ! $ISENCRYPTED\
-  && [ -d /data/adb/modules/early-mount.d ]; then
-    EIMDIR=/data/adb/modules/early-mount.d
-  elif [ -d /data/unencrypted/early-mount.d ]\
+  elif ! $ISENCRYPTED; then
+    EIMDIR=/data/adb/early-mount.d
+  elif [ -d /data/unencrypted ]\
   && ! grep ' /data ' /proc/mounts | grep -qE 'dm-|f2fs'; then
     EIMDIR=/data/unencrypted/early-mount.d
-  elif grep ' /cache ' /proc/mounts | grep -q 'ext4'\
-  && [ -d /cache/early-mount.d ]; then
+  elif grep ' /cache ' /proc/mounts | grep -q 'ext4'; then
     EIMDIR=/cache/early-mount.d
-  elif grep ' /metadata ' /proc/mounts | grep -q 'ext4'\
-  && [ -d /metadata/early-mount.d ]; then
+  elif grep ' /metadata ' /proc/mounts | grep -q 'ext4'; then
     EIMDIR=/metadata/early-mount.d
-  elif grep ' /persist ' /proc/mounts | grep -q 'ext4'\
-  && [ -d /persist/early-mount.d ]; then
+  elif grep ' /persist ' /proc/mounts | grep -q 'ext4'; then
     EIMDIR=/persist/early-mount.d
-  elif grep ' /mnt/vendor/persist ' /proc/mounts | grep -q 'ext4'\
-  && [ -d /mnt/vendor/persist/early-mount.d ]; then
+  elif grep ' /mnt/vendor/persist ' /proc/mounts | grep -q 'ext4'; then
     EIMDIR=/mnt/vendor/persist/early-mount.d
   else
     EIM=false
     ui_print "- Unable to find early init mount directory"
+    ui_print " "
   fi
   if [ -d ${EIMDIR%/early-mount.d} ]; then
+    mkdir -p $EIMDIR
     ui_print "- Your early init mount directory is"
     ui_print "  $EIMDIR"
     ui_print " "
     ui_print "  Any file stored to this directory will not be deleted even"
-    ui_print "  you have uninstalled this module. You can delete it"
-    ui_print "  manually using any root file manager."
+    ui_print "  you have uninstalled this module."
   else
     EIM=false
     ui_print "- Unable to find early init mount directory ${EIMDIR%/early-mount.d}"
@@ -496,9 +500,9 @@ check_function() {
 ui_print "- Checking"
 ui_print "$NAME"
 ui_print "  function at"
-ui_print "$SYSTEM$FILE"
+ui_print "$FILE"
 ui_print "  Please wait..."
-if ! grep -Eq $NAME $SYSTEM$FILE; then
+if ! grep -Eq $NAME $FILE; then
   ui_print "  ! Function not found."
   ui_print "    Unsupported ROM."
   remount_ro
@@ -512,8 +516,8 @@ chcon -R u:object_r:system_lib_file:s0 $MODPATH/system_support/lib*
 chcon -R u:object_r:same_process_hal_file:s0 $MODPATH/system_support/vendor/lib*
 NAME="libhidltransport.so libhwbinder.so"
 find_file
-FILE=/lib/libhidlbase.so
 NAME=_ZN7android8hardware7details17gBnConstructorMapE
+FILE=$SYSTEM/lib/libhidlbase.so
 check_function
 rm -rf $MODPATH/system_support
 
@@ -944,18 +948,26 @@ fi
 
 # permission
 ui_print "- Setting permission..."
-FILE=`find $MODPATH/system/vendor/bin $MODPATH/system/vendor/odm/bin -type f`
+FILE=`find $MODPATH/system/vendor/bin\
+           $MODPATH/system/vendor/odm/bin\
+           $MODPATH/system/odm/bin -type f`
 for FILES in $FILE; do
   chmod 0755 $FILES
-  chown 0.2000 $FILES
 done
 chmod 0751 $MODPATH/system/vendor/bin
 chmod 0751 $MODPATH/system/vendor/bin/hw
 chmod 0755 $MODPATH/system/vendor/odm/bin
 chmod 0755 $MODPATH/system/vendor/odm/bin/hw
+chmod 0755 $MODPATH/system/odm/bin
+chmod 0755 $MODPATH/system/odm/bin/hw
 DIR=`find $MODPATH/system/vendor -type d`
 for DIRS in $DIR; do
   chown 0.2000 $DIRS
+done
+FILE=`find $MODPATH/system/vendor/bin\
+           $MODPATH/system/vendor/odm/bin -type f`
+for FILES in $FILE; do
+  chown 0.2000 $FILES
 done
 ui_print " "
 
