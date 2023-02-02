@@ -16,10 +16,22 @@ resetprop audio.dolby.ds2.hardbypass true
 resetprop vendor.audio.dolby.ds2.enabled true
 resetprop vendor.audio.dolby.ds2.hardbypass true
 
+# restart
+if [ "$API" -ge 24 ]; then
+  SVC=audioserver
+else
+  SVC=mediaserver
+fi
+PID=`pidof $SVC`
+if [ "$PID" ]; then
+  killall $SVC
+fi
+
 # function
 stop_service() {
 for NAMES in $NAME; do
-  if getprop | grep "init.svc.$NAMES\]: \[running"; then
+  if [ "`getprop init.svc.$NAMES`" == running ]\
+  || [ "`getprop init.svc.$NAMES`" == restarting ]; then
     stop $NAMES
   fi
 done
@@ -58,6 +70,7 @@ killall android.hardware.sensors@1.0-service
 killall android.hardware.sensors@2.0-service-mediatek
 killall android.hardware.light-service.mt6768
 killall android.hardware.lights-service.xiaomi_mithorium
+killall vendor.samsung.hardware.light-service
 CAMERA=`realpath /*/bin/hw/android.hardware.camera.provider@*-service_64`
 [ "$CAMERA" ] && killall $CAMERA
 
@@ -116,27 +129,69 @@ if [ ! -d $MY_PRODUCT ] && [ -d /my_product/etc ]\
   done
 fi
 
-# restart
-PID=`pidof audioserver`
-if [ "$PID" ]; then
-  killall audioserver
-fi
-
 # wait
-sleep 40
-
-# allow
-PKG=com.dolby.daxservice
-if [ "$API" -ge 30 ]; then
-  appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
-fi
-killall $PKG
+until [ "`getprop sys.boot_completed`" == "1" ]; do
+  sleep 10
+done
 
 # allow
 PKG=com.dolby.dax2appUI
 if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
 fi
-killall $PKG
+
+# allow
+PKG=com.dolby.daxservice
+if [ "$API" -ge 30 ]; then
+  appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
+fi
+
+# function
+stop_log() {
+FILE=$MODPATH/debug.log
+SIZE=`du $FILE | sed "s|$FILE||"`
+if [ "$LOG" != stopped ] && [ "$SIZE" -gt 50 ]; then
+  exec 2>/dev/null
+  LOG=stopped
+fi
+}
+check_audioserver() {
+if [ "$NEXTPID" ]; then
+  PID=$NEXTPID
+else
+  PID=`pidof $SVC`
+fi
+sleep 10
+stop_log
+NEXTPID=`pidof $SVC`
+if [ "`getprop init.svc.$SVC`" != stopped ]; then
+  until [ "$PID" != "$NEXTPID" ]; do
+    check_audioserver
+  done
+  killall $PROC
+  check_audioserver
+else
+  start $SVC
+  check_audioserver
+fi
+}
+
+# check
+if [ "$API" -ge 24 ]; then
+  SVC=audioserver
+else
+  SVC=mediaserver
+fi
+PROC="com.dolby.daxservice com.dolby.dax2appUI"
+check_audioserver
+
+
+
+
+
+
+
+
+
 
 

@@ -9,9 +9,9 @@ exec 2>$MODPATH/debug-pfsd.log
 set -x
 
 # run
-FILE=$MODPATH/sepolicy.sh
+FILE=$MODPATH/sepolicy.pfsd
 if [ -f $FILE ]; then
-  . $FILE
+  magiskpolicy --live --apply $FILE
 fi
 
 # context
@@ -54,7 +54,6 @@ if [ -d $AML ] && [ ! -f $AML/disable ]\
 && [ -d $ACDB ] && [ ! -f $ACDB/disable ]; then
   touch $ACDB/disable
 fi
-rm -f /data/adb/modules/*/system/app/MotoSignatureApp/.replace
 
 # directory
 SKU=`ls $VETC/audio | grep sku_`
