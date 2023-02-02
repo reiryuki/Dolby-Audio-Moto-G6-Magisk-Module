@@ -1,3 +1,2 @@
 com.dolby.dax2appUI
 com.dolby.daxservice
-com.motorola.motosignature.app
