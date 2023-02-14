@@ -878,7 +878,7 @@ NAME=DolbyUninstaller.zip
 cp -f $MODPATH/$NAME /sdcard
 rm -f $MODPATH/$NAME
 ui_print "- Flash /sdcard/$NAME"
-ui_print "  via recovery if you got bootloop"
+ui_print "  via recovery only if you got bootloop"
 ui_print " "
 
 
