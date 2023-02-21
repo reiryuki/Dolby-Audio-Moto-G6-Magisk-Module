@@ -85,8 +85,8 @@ ui_print " "
 # check
 NAME=_ZN7android8hardware7details17gBnConstructorMapE
 TARGET=vendor.dolby.hardware.dms@1.0.so
-LIST=`strings $MODPATH/system/vendor/lib/$TARGET | grep lib | grep .so`
-FILE=`for LISTS in $LIST; do echo $SYSTEM/lib/$LISTS; done`
+LISTS=`strings $MODPATH/system/vendor/lib/$TARGET | grep ^lib | grep .so`
+FILE=`for LIST in $LISTS; do echo $SYSTEM/lib/$LIST; done`
 check_function
 
 # sepolicy
