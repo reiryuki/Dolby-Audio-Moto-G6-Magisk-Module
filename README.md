@@ -17,7 +17,7 @@
 - https://t.me/androidryukimodsdiscussions/610
 
 ## Requirements
-- Android 9 and up
+- Android 8 and up
 - Magisk or KernelSU installed (Recommended to use Magisk Delta for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/androidryukimodsdiscussions/100091)
 
 ## WARNING!!!
