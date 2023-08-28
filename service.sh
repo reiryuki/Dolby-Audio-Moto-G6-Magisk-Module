@@ -1,11 +1,14 @@
 MODPATH=${0%/*}
-API=`getprop ro.build.version.sdk`
 
 # log
 exec 2>$MODPATH/debug.log
 set -x
 
+# var
+API=`getprop ro.build.version.sdk`
+
 # property
+resetprop ro.audio.ignore_effects false
 resetprop ro.product.brand motorola
 resetprop ro.product.device ali
 resetprop ro.product.manufacturer motorola
@@ -39,7 +42,12 @@ done
 DIR=/odm/bin/hw
 FILE=$DIR/vendor.dolby_v3_6.hardware.dms360@2.0-service
 if [ "`realpath $DIR`" == $DIR ] && [ -f $FILE ]; then
-  mount -o bind $MODPATH/system/vendor/$FILE $FILE
+  if [ -L $MODPATH/system/vendor ]\
+  && [ -d $MODPATH/vendor ]; then
+    mount -o bind $MODPATH/vendor/$FILE $FILE
+  else
+    mount -o bind $MODPATH/system/vendor/$FILE $FILE
+  fi
 fi
 
 # run
@@ -122,7 +130,7 @@ if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
 fi
 PKGOPS=`appops get $PKG`
-UID=`dumpsys package $PKG 2>/dev/null | grep -m 1 userId= | sed 's/    userId=//'`
+UID=`dumpsys package $PKG 2>/dev/null | grep -m 1 userId= | sed 's|    userId=||g'`
 if [ "$UID" -gt 9999 ]; then
   UIDOPS=`appops get --uid "$UID"`
 fi
@@ -133,7 +141,7 @@ if [ "$API" -ge 30 ]; then
   appops set $PKG AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore
 fi
 PKGOPS=`appops get $PKG`
-UID=`dumpsys package $PKG 2>/dev/null | grep -m 1 userId= | sed 's/    userId=//'`
+UID=`dumpsys package $PKG 2>/dev/null | grep -m 1 userId= | sed 's|    userId=||g'`
 if [ "$UID" -gt 9999 ]; then
   UIDOPS=`appops get --uid "$UID"`
 fi
@@ -141,7 +149,7 @@ fi
 # function
 stop_log() {
 FILE=$MODPATH/debug.log
-SIZE=`du $FILE | sed "s|$FILE||"`
+SIZE=`du $FILE | sed "s|$FILE||g"`
 if [ "$LOG" != stopped ] && [ "$SIZE" -gt 50 ]; then
   exec 2>/dev/null
   LOG=stopped
