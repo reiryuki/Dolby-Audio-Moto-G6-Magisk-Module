@@ -29,6 +29,11 @@ else
 fi
 ui_print " "
 
+# 32 bit
+if [ ! "`getprop ro.product.cpu.abilist32`" ]; then
+  abort "- This ROM doesn't support 32 bit library."
+fi
+
 # sdk
 NUM=26
 if [ "$API" -lt $NUM ]; then

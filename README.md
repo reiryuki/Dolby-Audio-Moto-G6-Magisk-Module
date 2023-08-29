@@ -17,6 +17,7 @@
 - https://t.me/androidryukimodsdiscussions/610
 
 ## Requirements
+- 32 bit architecture or 64 bit architecture with 32 bit library support
 - Android 8 and up
 - Magisk or KernelSU installed (Recommended to use Magisk Delta for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/androidryukimodsdiscussions/100091)
 
