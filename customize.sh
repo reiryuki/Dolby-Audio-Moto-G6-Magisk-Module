@@ -317,11 +317,18 @@ early_init_mount_dir() {
 if echo $MAGISK_VER | grep -q delta\
 && [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]; then
   EIM=true
-  ACTIVEEIMDIR=$MAGISKTMP/mirror/early-mount
-  if [ "$BOOTMODE" == true ]\
-  && [ -L $ACTIVEEIMDIR ]; then
-    EIMDIR=`readlink $ACTIVEEIMDIR`
+  DIR=$MAGISKTMP/mirror/early-mount
+  if "$BOOTMODE"\
+  && [ -L $DIR ]; then
+    EIMDIR=`readlink $DIR`
     [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MAGISKTMP/mirror/$EIMDIR"
+  if "$BOOTMODE"\
+  && [ "$MAGISK_VER_CODE" -ge 26000 ]; then
+    DIR=$MAGISKTMP/preinit
+    MOUNT=`mount | grep $DIR`
+    BLOCK=`echo $MOUNT | sed 's| on.*$||g'`
+    DIR=`mount | sed "s|$MOUNT||g" | grep -m 1 $BLOCK`
+    EIMDIR=`echo $DIR | sed "s|$BLOCK on ||g" | sed 's| type.*$||g'`/early-mount.d
   elif ! $ISENCRYPTED; then
     EIMDIR=/data/adb/early-mount.d
   elif [ -d /data/unencrypted ]\

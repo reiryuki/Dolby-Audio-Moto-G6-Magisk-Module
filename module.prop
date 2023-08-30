@@ -1,7 +1,7 @@
 id=DolbyAudio
 name=Dolby Audio Moto G6
-version=v5.18
-versionCode=58
+version=v5.19
+versionCode=59
 author=Rei Ryuki the Fixer
 description=An equalizer global type soundfx ported from Motorola G6 (ali) for any Android 8 and up.
 
