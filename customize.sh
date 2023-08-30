@@ -322,7 +322,7 @@ if echo $MAGISK_VER | grep -q delta\
   && [ -L $DIR ]; then
     EIMDIR=`readlink $DIR`
     [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MAGISKTMP/mirror/$EIMDIR"
-  if "$BOOTMODE"\
+  elif "$BOOTMODE"\
   && [ "$MAGISK_VER_CODE" -ge 26000 ]; then
     DIR=$MAGISKTMP/preinit
     MOUNT=`mount | grep $DIR`
