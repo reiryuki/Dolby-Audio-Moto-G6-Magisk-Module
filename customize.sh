@@ -9,6 +9,22 @@ if [ "$BOOTMODE" != true ]; then
   ui_print " "
 fi
 
+# optionals
+OPTIONALS=/sdcard/optionals.prop
+if [ ! -f $OPTIONALS ]; then
+  touch $OPTIONALS
+fi
+
+# debug
+if [ "`grep_prop debug.log $OPTIONALS`" == 1 ]; then
+  ui_print "- The install log will contain detailed information"
+  set -x
+  ui_print " "
+fi
+
+# var
+LIST32BIT=`getprop ro.product.cpu.abilist32`
+
 # run
 . $MODPATH/function.sh
 
@@ -29,9 +45,20 @@ else
 fi
 ui_print " "
 
-# 32 bit
-if [ ! "`getprop ro.product.cpu.abilist32`" ]; then
-  abort "- This ROM doesn't support 32 bit library."
+# bit
+if [ "$IS64BIT" == true ]; then
+  ui_print "- 64 bit architecture"
+  ui_print " "
+  # 32 bit
+  if [ "$LIST32BIT" ]; then
+    ui_print "- 32 bit library support"
+  else
+    abort "! This ROM doesn't support 32 bit library."
+  fi
+  ui_print " "
+else
+  ui_print "- 32 bit architecture"
+  ui_print " "
 fi
 
 # sdk
@@ -77,28 +104,32 @@ SYSTEM_EXT=`realpath $MIRROR/system_ext`
 ODM=`realpath $MIRROR/odm`
 MY_PRODUCT=`realpath $MIRROR/my_product`
 
-# optionals
-OPTIONALS=/sdcard/optionals.prop
-if [ ! -f $OPTIONALS ]; then
-  touch $OPTIONALS
-fi
-
-# check
-NAME=_ZN7android8hardware7details17gBnConstructorMapE
-DES=vendor.dolby.hardware.dms@1.0.so
-LIB=libhidlbase.so
-LISTS=`strings $MODPATH/system/vendor/lib/$DES | grep ^lib | grep .so`
-FILE=`for LIST in $LISTS; do echo $SYSTEM/lib/$LIST; done`
+# function
+run_check_function() {
+LISTS=`strings $MODPATH/system/vendor$DIR/$DES | grep ^lib | grep .so`
+FILE=`for LIST in $LISTS; do echo $SYSTEM$DIR/$LIST; done`
 ui_print "- Checking"
 ui_print "$NAME"
 ui_print "  function at"
 ui_print "$FILE"
 ui_print "  Please wait..."
 if ! grep -q $NAME $FILE; then
-  ui_print "  Using new $LIB"
-  mv -f $MODPATH/system_support/lib/$LIB $MODPATH/system/lib
+  ui_print "  Function not found."
+  ui_print "  Using new $DIR$LIB"
+  mv -f $MODPATH/system_support$DIR/$LIB $MODPATH/system$DIR
 fi
 ui_print " "
+}
+check_function() {
+DIR=/lib
+run_check_function
+}
+
+# check
+NAME=_ZN7android8hardware7details17gBnConstructorMapE
+DES=vendor.dolby.hardware.dms@1.0.so
+LIB=libhidlbase.so
+check_function
 
 # sepolicy
 FILE=$MODPATH/sepolicy.rule
@@ -317,18 +348,17 @@ early_init_mount_dir() {
 if echo $MAGISK_VER | grep -q delta\
 && [ "`grep_prop dolby.skip.early $OPTIONALS`" != 1 ]; then
   EIM=true
-  DIR=$MAGISKTMP/mirror/early-mount
   if "$BOOTMODE"\
-  && [ -L $DIR ]; then
-    EIMDIR=`readlink $DIR`
-    [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MAGISKTMP/mirror/$EIMDIR"
+  && [ -L $MIRROR/early-mount ]; then
+    EIMDIR=`readlink $MIRROR/early-mount`
+    [ "${EIMDIR:0:1}" != "/" ] && EIMDIR="$MIRROR/$EIMDIR"
   elif "$BOOTMODE"\
-  && [ "$MAGISK_VER_CODE" -ge 26000 ]; then
-    DIR=$MAGISKTMP/preinit
-    MOUNT=`mount | grep $DIR`
-    BLOCK=`echo $MOUNT | sed 's| on.*$||g'`
+  && [ "$MAGISK_VER_CODE" -ge 26000 ]\
+  && [ -d $MAGISKTMP/preinit ]; then
+    MOUNT=`mount | grep $MAGISKTMP/preinit`
+    BLOCK=`echo $MOUNT | sed 's| on.*||g'`
     DIR=`mount | sed "s|$MOUNT||g" | grep -m 1 $BLOCK`
-    EIMDIR=`echo $DIR | sed "s|$BLOCK on ||g" | sed 's| type.*$||g'`/early-mount.d
+    EIMDIR=`echo $DIR | sed "s|$BLOCK on ||g" | sed 's| type.*||g'`/early-mount.d
   elif ! $ISENCRYPTED; then
     EIMDIR=/data/adb/early-mount.d
   elif [ -d /data/unencrypted ]\
@@ -385,63 +415,39 @@ else
   EIM=false
 fi
 }
-find_file() {
+run_find_file() {
 for NAME in $NAMES; do
-  if [ "$IS64BIT" == true ]; then
-    FILE=`find $SYSTEM/lib64 $VENDOR/lib64 $SYSTEM_EXT/lib64 -type f -name $NAME`
-    if [ ! "$FILE" ]; then
-      if [ "`grep_prop install.hwlib $OPTIONALS`" == 1 ]; then
-        ui_print "- Installing $NAME 64 directly to"
-        ui_print "$SYSTEM/lib64..."
-        cp $MODPATH/system_support/lib64/$NAME $SYSTEM/lib64
-        DES=$SYSTEM/lib64/$NAME
-        if [ -f $MODPATH/system_support/lib64/$NAME ]\
-        && [ ! -f $DES ]; then
-          ui_print "  ! Installation failed."
-          ui_print "    Using $NAME 64 systemlessly."
-          cp -f $MODPATH/system_support/lib64/$NAME $MODPATH/system/lib64
-        fi
-      else
-        ui_print "! $NAME 64 not found."
-        ui_print "  Using $NAME 64 systemlessly."
-        cp -f $MODPATH/system_support/lib64/$NAME $MODPATH/system/lib64
-        ui_print "  If this module still doesn't work, type:"
-        ui_print "  install.hwlib=1"
-        ui_print "  inside $OPTIONALS"
-        ui_print "  and reinstall this module"
-        ui_print "  to install $NAME 64 directly to this ROM."
-        ui_print "  DwYOR!"
-      fi
-      ui_print " "
-    fi
-  fi
-  FILE=`find $SYSTEM/lib $VENDOR/lib $SYSTEM_EXT/lib -type f -name $NAME`
+  FILE=`find $SYSTEM$DIR $SYSTEM_EXT$DIR -type f -name $NAME`
   if [ ! "$FILE" ]; then
     if [ "`grep_prop install.hwlib $OPTIONALS`" == 1 ]; then
-      ui_print "- Installing $NAME directly to"
-      ui_print "$SYSTEM/lib..."
-      cp $MODPATH/system_support/lib/$NAME $SYSTEM/lib
-      DES=$SYSTEM/lib/$NAME
-      if [ -f $MODPATH/system_support/lib/$NAME ]\
+      ui_print "- Installing $DIR/$NAME directly to"
+      ui_print "$SYSTEM..."
+      cp $MODPATH/system_support$DIR/$NAME $SYSTEM$DIR
+      DES=$SYSTEM$DIR/$NAME
+      if [ -f $MODPATH/system_support$DIR/$NAME ]\
       && [ ! -f $DES ]; then
         ui_print "  ! Installation failed."
-        ui_print "    Using $NAME systemlessly."
-        cp -f $MODPATH/system_support/lib/$NAME $MODPATH/system/lib
+        ui_print "    Using $DIR/$NAME systemlessly."
+        cp -f $MODPATH/system_support$DIR/$NAME $MODPATH/system$DIR
       fi
     else
-      ui_print "! $NAME not found."
-      ui_print "  Using $NAME systemlessly."
-      cp -f $MODPATH/system_support/lib/$NAME $MODPATH/system/lib
+      ui_print "! $DIR/$NAME not found."
+      ui_print "  Using $DIR/$NAME systemlessly."
+      cp -f $MODPATH/system_support$DIR/$NAME $MODPATH/system$DIR
       ui_print "  If this module still doesn't work, type:"
       ui_print "  install.hwlib=1"
       ui_print "  inside $OPTIONALS"
       ui_print "  and reinstall this module"
-      ui_print "  to install $NAME directly to this ROM."
+      ui_print "  to install $DIR/$NAME directly to this ROM."
       ui_print "  DwYOR!"
     fi
     ui_print " "
   fi
 done
+}
+find_file() {
+DIR=/lib
+run_find_file
 sed -i 's|^install.hwlib=1|install.hwlib=0|g' $OPTIONALS
 }
 patch_manifest_eim() {

@@ -85,9 +85,7 @@ fi
 
 # directory
 DIR=/data/vendor/media
-if [ ! -d $DIR ]; then
-  mkdir -p $DIR
-fi
+mkdir -p $DIR
 chmod 0770 $DIR
 chown 1046.1013 $DIR
 chcon u:object_r:vendor_media_data_file:s0 $DIR
