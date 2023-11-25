@@ -19,13 +19,13 @@
 ## Requirements
 - 32 bit architecture or 64 bit architecture with 32 bit library support
 - Android 8 and up
-- Magisk or KernelSU installed (Recommended to use Magisk Delta for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/androidryukimodsdiscussions/100091)
+- Magisk or KernelSU installed (Recommended to use Magisk Delta/Kitsune Mask for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/androidryukimodsdiscussions/100091)
 
 ## WARNING!!!
-- Possibility of bootloop or even softbrick or a service failure on Read-Only ROM if you don't use Magisk Delta.
+- Possibility of bootloop or even softbrick or a service failure on Read-Only ROM if you don't use Magisk Delta/Kitsune Mask.
 
 ## Installation Guide & Download Link
-- Recommended to use Magisk Delta https://t.me/androidryukimodsdiscussions/100091
+- Recommended to use Magisk Delta/Kitsune Mask https://t.me/androidryukimodsdiscussions/100091
 - Remove any other else Dolby Magisk module with different name (no need to remove if it's the same name)
 - Reboot
 - If you have Dolby in-built in your ROM, then you need to activate data.cleanup=1 at the first time install (READ Optionals bellow!)
