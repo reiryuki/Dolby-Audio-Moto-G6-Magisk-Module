@@ -14,6 +14,7 @@ resetprop ro.product.brand motorola
 resetprop ro.product.device ali
 resetprop ro.product.manufacturer motorola
 resetprop ro.product.model "moto g(6)"
+resetprop ro.dolby.mod_uuid false
 resetprop audio.dolby.ds2.enabled true
 resetprop audio.dolby.ds2.hardbypass true
 resetprop vendor.audio.dolby.ds2.enabled true
@@ -31,7 +32,7 @@ if [ "$PID" ]; then
 fi
 
 # stop
-NAMES="dms-hal-1-0 dms-hal-2-0 dms-v36-hal-2-0"
+NAMES="dms-hal-1-0 dms-hal-2-0"
 for NAME in $NAMES; do
   if [ "`getprop init.svc.$NAME`" == running ]\
   || [ "`getprop init.svc.$NAME`" == restarting ]; then
@@ -41,8 +42,7 @@ done
 
 # mount
 DIR=/odm/bin/hw
-FILES="$DIR/vendor.dolby_v3_6.hardware.dms360@2.0-service
-       $DIR/vendor.dolby.hardware.dms@2.0-service"
+FILES=$DIR/vendor.dolby.hardware.dms@2.0-service
 if [ "`realpath $DIR`" == $DIR ]; then
   for FILE in $FILES; do
     if [ -f $FILE ]; then
