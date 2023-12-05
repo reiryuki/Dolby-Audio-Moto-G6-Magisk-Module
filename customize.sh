@@ -736,8 +736,13 @@ done
 # hide
 APPS="`ls $MODPATH/system/priv-app` `ls $MODPATH/system/app`"
 hide_oat
-APPS="MusicFX MotoDolbyDax3 MotoDolbyV3 OPSoundTuner
-      DolbyAtmos daxUser AudioEffectCenter"
+if [ "`grep_prop dolby.mod $OPTIONALS`" == 0 ]; then
+  APPS="MusicFX MotoDolbyDax3 MotoDolbyV3 OPSoundTuner
+        DolbyAtmos daxUser AudioEffectCenter"
+else
+  APPS="MusicFX MotoDolbyDax3 MotoDolbyV3 OPSoundTuner
+        DolbyAtmos daxUser"
+fi
 hide_app
 
 # stream mode
@@ -955,7 +960,7 @@ $MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service"
   change_name
   NAME=39537a04bcaa
   NAME2=5f7279756b69
-  FILE=$MODPATH/.aml.sh
+  FILE="$MODPATH/.aml.sh $MODPATH/acdb*.conf"
   change_name
   NAME=452799218539
 #  change_name
