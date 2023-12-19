@@ -1,16 +1,23 @@
 # space
 ui_print " "
 
+# var
+UID=`id -u`
+LIST32BIT=`grep_get_prop ro.product.cpu.abilist32`
+if [ ! "$LIST32BIT" ]; then
+  LIST32BIT=`grep_get_prop ro.system.product.cpu.abilist32`
+fi
+
 # log
 if [ "$BOOTMODE" != true ]; then
-  FILE=/sdcard/$MODID\_recovery.log
+  FILE=/storage/emulated/"$UID"/$MODID\_recovery.log
   ui_print "- Log will be saved at $FILE"
   exec 2>$FILE
   ui_print " "
 fi
 
 # optionals
-OPTIONALS=/sdcard/optionals.prop
+OPTIONALS=/storage/emulated/"$UID"/optionals.prop
 if [ ! -f $OPTIONALS ]; then
   touch $OPTIONALS
 fi
@@ -20,12 +27,6 @@ if [ "`grep_prop debug.log $OPTIONALS`" == 1 ]; then
   ui_print "- The install log will contain detailed information"
   set -x
   ui_print " "
-fi
-
-# var
-LIST32BIT=`grep_get_prop ro.product.cpu.abilist32`
-if [ ! "$LIST32BIT" ]; then
-  LIST32BIT=`grep_get_prop ro.system.product.cpu.abilist32`
 fi
 
 # run
@@ -160,7 +161,7 @@ mv -f $MODPATH/aml.sh $MODPATH/.aml.sh
 MOD_UI=false
 if [ "`grep_prop mod.ui $OPTIONALS`" == 1 ]; then
   APP=DaxUI
-  FILE=/sdcard/$APP.apk
+  FILE=/storage/emulated/"$UID"/$APP.apk
   DIR=`find $MODPATH/system -type d -name $APP`
   ui_print "- Using modified UI apk..."
   if [ -f $FILE ]; then
@@ -466,28 +467,8 @@ run_find_file() {
 for NAME in $NAMES; do
   FILE=`find $SYSTEM$DIR $SYSTEM_EXT$DIR -type f -name $NAME`
   if [ ! "$FILE" ]; then
-    if [ "`grep_prop install.hwlib $OPTIONALS`" == 1 ]; then
-      ui_print "- Installing $DIR/$NAME directly to"
-      ui_print "$SYSTEM..."
-      cp $MODPATH/system_support$DIR/$NAME $SYSTEM$DIR
-      DES=$SYSTEM$DIR/$NAME
-      if [ -f $MODPATH/system_support$DIR/$NAME ]\
-      && [ ! -f $DES ]; then
-        ui_print "  ! Installation failed."
-        ui_print "    Using $DIR/$NAME systemlessly."
-        cp -f $MODPATH/system_support$DIR/$NAME $MODPATH/system$DIR
-      fi
-    else
-      ui_print "! $DIR/$NAME not found."
-      ui_print "  Using $DIR/$NAME systemlessly."
-      cp -f $MODPATH/system_support$DIR/$NAME $MODPATH/system$DIR
-      ui_print "  If this module still doesn't work, type:"
-      ui_print "  install.hwlib=1"
-      ui_print "  inside $OPTIONALS"
-      ui_print "  and reinstall this module"
-      ui_print "  to install $DIR/$NAME directly to this ROM."
-      ui_print "  DwYOR!"
-    fi
+    ui_print "- Using /system$DIR/$NAME"
+    cp -f $MODPATH/system_support$DIR/$NAME $MODPATH/system$DIR
     ui_print " "
   fi
 done
@@ -495,7 +476,6 @@ done
 find_file() {
 DIR=/lib
 run_find_file
-sed -i 's|^install.hwlib=1|install.hwlib=0|g' $OPTIONALS
 }
 patch_manifest_eim() {
 if [ $EIM == true ]; then
@@ -576,7 +556,6 @@ remount_rw
 early_init_mount_dir
 
 # check
-chcon -R u:object_r:system_lib_file:s0 $MODPATH/system_support/lib*
 NAMES="libhidltransport.so libhwbinder.so"
 find_file
 rm -rf $MODPATH/system_support
@@ -935,22 +914,18 @@ if [ "`grep_prop dolby.mod $OPTIONALS`" != 0 ]; then
   change_name
   NAME=libswdap.so
   NAME2=libswdlb.so
-  if [ "$LIST32BIT" ]; then
-    FILE=$MODPATH/system/vendor/lib/soundfx/$NAME
-    MODFILE=$MODPATH/system/vendor/lib/soundfx/$NAME2
-    rename_file
-  fi
+  FILE=$MODPATH/system/vendor/lib/soundfx/$NAME
+  MODFILE=$MODPATH/system/vendor/lib/soundfx/$NAME2
+  rename_file
   FILE="$MODPATH/system/vendor/lib*/soundfx/$NAME2
 $MODPATH/.aml.sh
 $MODPATH/acdb.conf"
   change_name
   NAME=libdlbdsservice.so
   NAME2=libdapdsservice.so
-  if [ "$LIST32BIT" ]; then
-    FILE=$MODPATH/system/vendor/lib/$NAME
-    MODFILE=$MODPATH/system/vendor/lib/$NAME2
-    rename_file
-  fi
+  FILE=$MODPATH/system/vendor/lib/$NAME
+  MODFILE=$MODPATH/system/vendor/lib/$NAME2
+  rename_file
   FILE="$MODPATH/system/vendor/lib*/$NAME2
 $MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*-impl.so
 $MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service"
@@ -997,6 +972,24 @@ if [ "`grep_prop disable.raw $OPTIONALS`" == 0 ]; then
 else
   sed -i 's|#u||g' $FILE
 fi
+
+# function
+file_check_vendor() {
+for FILE in $FILES; do
+  DES=$VENDOR$FILE
+  DES2=$ODM$FILE
+  if [ -f $DES ] || [ -f $DES2 ]; then
+    ui_print "- Detected $FILE"
+    ui_print " "
+    rm -f $MODPATH/system/vendor$FILE
+  fi
+done
+}
+
+# check
+FILES="/lib/libstagefrightdolby.so
+       /lib/libstagefright_soft_ddpdec.so"
+file_check_vendor
 
 # vendor_overlay
 DIR=/product/vendor_overlay
