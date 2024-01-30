@@ -103,31 +103,50 @@ if [ -f /system$FILE ] || [ -f /vendor$FILE ]\
 fi
 
 # function
-run_check_function() {
-LISTS=`strings $MODPATH/system/vendor$DIR/$DES | grep ^lib | grep .so`
-FILE=`for LIST in $LISTS; do echo $SYSTEM$DIR/$LIST; done`
-ui_print "- Checking"
-ui_print "$NAME"
-ui_print "  function at"
-ui_print "$FILE"
-ui_print "  Please wait..."
-if ! grep -q $NAME $FILE; then
-  ui_print "  Function not found."
-  ui_print "  Replaces /system$DIR/$LIB"
-  mv -f $MODPATH/system_support$DIR/$LIB $MODPATH/system$DIR
-fi
-ui_print " "
-}
 check_function() {
-DIR=/lib
-run_check_function
+if [ -f $MODPATH/system_support$DIR/$LIB ]; then
+  ui_print "- Checking"
+  ui_print "$NAME"
+  ui_print "  function at"
+  ui_print "$FILE"
+  ui_print "  Please wait..."
+  if ! grep -q $NAME $FILE; then
+    ui_print "  Function not found."
+    ui_print "  Replaces /system$DIR/$LIB."
+    mv -f $MODPATH/system_support$DIR/$LIB $MODPATH/system$DIR
+    [ "$MES" ] && ui_print "$MES"
+  fi
+  ui_print " "
+fi
+}
+find_file() {
+for LIB in $LIBS; do
+  if [ -f $MODPATH/system_support$DIR/$LIB ]; then
+    FILE=`find $SYSTEM$DIR $SYSTEM_EXT$DIR -type f -name $LIB`
+    if [ ! "$FILE" ]; then
+      ui_print "- Using /system$DIR/$LIB."
+      mv -f $MODPATH/system_support$DIR/$LIB $MODPATH/system$DIR
+      ui_print " "
+    fi
+  fi
+done
 }
 
 # check
 NAME=_ZN7android8hardware7details17gBnConstructorMapE
 DES=vendor.dolby.hardware.dms@1.0.so
 LIB=libhidlbase.so
+MES="  Dolby Audio may not work."
+DIR=/lib
+LISTS=`strings $MODPATH/system/vendor$DIR/$DES | grep ^lib | grep .so`
+FILE=`for LIST in $LISTS; do echo $SYSTEM$DIR/$LIST; done`
 check_function
+
+# check
+LIBS="libhidltransport.so libhwbinder.so"
+DIR=/lib
+find_file
+rm -rf $MODPATH/system_support
 
 # sepolicy
 FILE=$MODPATH/sepolicy.rule
@@ -450,19 +469,15 @@ else
   EIM=false
 fi
 }
-run_find_file() {
-for NAME in $NAMES; do
-  FILE=`find $SYSTEM$DIR $SYSTEM_EXT$DIR -type f -name $NAME`
-  if [ ! "$FILE" ]; then
-    ui_print "- Using /system$DIR/$NAME"
-    cp -f $MODPATH/system_support$DIR/$NAME $MODPATH/system$DIR
-    ui_print " "
-  fi
-done
-}
-find_file() {
-DIR=/lib
-run_find_file
+eim_cache_warning() {
+if echo $EIMDIR | grep -q cache; then
+  ui_print "  Please do not ever wipe your /cache"
+  ui_print "  as long as this module is installed!"
+  ui_print "  If your /cache is wiped for some reasons,"
+  ui_print "  then you need to uninstall this module and reboot first,"
+  ui_print "  then reinstall this module afterwards"
+  ui_print "  to get this module working correctly."
+fi
 }
 patch_manifest_eim() {
 if [ $EIM == true ]; then
@@ -484,14 +499,14 @@ if [ $EIM == true ]; then
     fi
     if ! grep -A2 vendor.dolby.hardware.dms $DES | grep -q 1.0; then
       ui_print "- Patching"
-      ui_print "$SRC"
-      ui_print "  systemlessly using early init mount..."
+      ui_print "$DES"
       sed -i '/<manifest/a\
     <hal format="hidl">\
         <name>vendor.dolby.hardware.dms</name>\
         <transport>hwbinder</transport>\
         <fqname>@1.0::IDms/default</fqname>\
     </hal>' $DES
+      eim_cache_warning
       ui_print " "
     fi
   else
@@ -511,10 +526,10 @@ if [ $EIM == true ]; then
     fi
     if ! grep -Eq 'u:object_r:hal_dms_hwservice:s0|u:object_r:default_android_hwservice:s0' $DES; then
       ui_print "- Patching"
-      ui_print "$SRC"
-      ui_print "  systemlessly using early init mount..."
+      ui_print "$DES"
       sed -i '1i\
 vendor.dolby.hardware.dms::IDms u:object_r:hal_dms_hwservice:s0' $DES
+      eim_cache_warning
       ui_print " "
     fi
   else
@@ -541,11 +556,6 @@ remount_rw
 
 # early init mount dir
 early_init_mount_dir
-
-# check
-NAMES="libhidltransport.so libhwbinder.so"
-find_file
-rm -rf $MODPATH/system_support
 
 # patch manifest.xml
 if [ "$API" -ge 28 ]; then
