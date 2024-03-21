@@ -15,6 +15,7 @@ resetprop -n ro.product.device ali
 resetprop -n ro.product.manufacturer motorola
 resetprop -n ro.product.model "moto g(6)"
 resetprop -n ro.dolby.mod_uuid false
+resetprop -n ro.dolby.music_stream false
 resetprop -n audio.dolby.ds2.enabled true
 resetprop -n audio.dolby.ds2.hardbypass true
 resetprop -n vendor.audio.dolby.ds2.enabled true
