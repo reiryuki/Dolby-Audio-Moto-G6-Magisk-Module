@@ -144,7 +144,6 @@ check_function
 LIBS="libhidltransport.so libhwbinder.so"
 DIR=/lib
 find_file
-rm -rf $MODPATH/system_support
 
 # sepolicy
 FILE=$MODPATH/sepolicy.rule
@@ -184,7 +183,6 @@ if [ "$MOD_UI" != true ]\
   cp -rf $MODPATH/system_black/* $MODPATH/system
   ui_print " "
 fi
-rm -rf $MODPATH/system_black
 
 # 36 dB
 PROP=`grep_prop dolby.gain $OPTIONALS`
@@ -198,8 +196,6 @@ if [ "$MOD_UI" != true ] && [ "$PROP" ]\
   fi
   ui_print " "
 fi
-rm -rf $MODPATH/system_black_36dB
-rm -rf $MODPATH/system_36dB
 
 # cleaning
 ui_print "- Cleaning..."
@@ -218,7 +214,11 @@ else
   rm -f /data/vendor/media/dap_sqlite3.db
   sed -i 's|dax_sqlite3.db|dap_sqlite3.db|g' $MODPATH/uninstall.sh
 fi
-rm -rf $MODPATH/unused
+rm -rf $MODPATH/system_support\
+ $MODPATH/system_black\
+ $MODPATH/system_black_36dB\
+ $MODPATH/system_36dB\
+ $MODPATH/unused
 remove_sepolicy_rule
 ui_print " "
 
@@ -238,12 +238,12 @@ for NAME in $NAMES; do
     sh $FILE
     rm -f $FILE
   fi
-  rm -rf /metadata/magisk/$NAME
-  rm -rf /mnt/vendor/persist/magisk/$NAME
-  rm -rf /persist/magisk/$NAME
-  rm -rf /data/unencrypted/magisk/$NAME
-  rm -rf /cache/magisk/$NAME
-  rm -rf /cust/magisk/$NAME
+  rm -rf /metadata/magisk/$NAME\
+   /mnt/vendor/persist/magisk/$NAME\
+   /persist/magisk/$NAME\
+   /data/unencrypted/magisk/$NAME\
+   /cache/magisk/$NAME\
+   /cust/magisk/$NAME
 done
 }
 
@@ -571,34 +571,6 @@ fi
 remount_ro
 
 # function
-patch_file() {
-ui_print "- Patching"
-ui_print "$FILE"
-ui_print "  Changing $PROP"
-ui_print "  to $MODPROP"
-ui_print "  Please wait..."
-sed -i "s|$PROP|$MODPROP|g" $FILE
-ui_print " "
-}
-
-# patch
-if [ "`grep_prop dolby.patch $OPTIONALS`" != 0 ]; then
-  FILE=`find $MODPATH -type f -name libswdap.so -o -name service.sh`
-  PROP=ro.product.brand
-  MODPROP=ro.product.dolby
-  patch_file
-  PROP=ro.product.device
-  MODPROP=ro.product.dolby2
-  patch_file
-  PROP=ro.product.manufacturer
-  MODPROP=ro.product.eqdolbyaudio
-  patch_file
-  PROP=ro.product.model
-  MODPROP=ro.product.audio
-  patch_file
-fi
-
-# function
 hide_oat() {
 for APP in $APPS; do
   REPLACE="$REPLACE
@@ -812,6 +784,24 @@ fi
 ui_print " "
 
 # function
+file_check_vendor() {
+for FILE in $FILES; do
+  DES=$VENDOR$FILE
+  DES2=$ODM$FILE
+  if [ -f $DES ] || [ -f $DES2 ]; then
+    ui_print "- Detected $FILE"
+    ui_print " "
+    rm -f $MODPATH/system/vendor$FILE
+  fi
+done
+}
+
+# check
+FILES="/lib/libstagefrightdolby.so
+       /lib/libstagefright_soft_ddpdec.so"
+file_check_vendor
+
+# function
 rename_file() {
 if [ -f $FILE ]; then
   ui_print "- Renaming"
@@ -833,6 +823,34 @@ fi
 }
 
 # mod
+if [ "`grep_prop dolby.patch $OPTIONALS`" != 0 ]; then
+  FILE=`find $MODPATH -type f -name libswdap.so -o -name service.sh`
+  NAME=ro.product.brand
+  NAME2=ro.product.dolby
+  change_name
+  NAME=ro.product.device
+  NAME2=ro.product.dolby2
+  change_name
+  NAME=ro.product.manufacturer
+  NAME2=ro.product.eqdolbyaudio
+  change_name
+  NAME=ro.product.model
+  NAME2=ro.product.audio
+  change_name
+fi
+NAME=libstagefright_foundation.so
+NAME2=libstagefright_fdtn_dolby.so
+if [ "$LIST32BIT" ]; then
+  FILE=$MODPATH/system/vendor/lib/$NAME
+  MODFILE=$MODPATH/system/vendor/lib/$NAME2
+  rename_file
+fi
+FILE="$MODPATH/system/vendor/lib*/$NAME2
+$MODPATH/system/vendor/lib*/libdlbdsservice.so
+$MODPATH/system/vendor/lib*/libstagefrightdolby.so
+$MODPATH/system/vendor/lib*/libstagefright_soft_ddpdec.so"
+#$MODPATH/system/vendor/lib*/libstagefright_soft_ac4dec.so
+change_name
 if [ "`grep_prop dolby.mod $OPTIONALS`" != 0 ]; then
   NAME=dax-default.xml
   NAME2=dap-default.xml
@@ -886,24 +904,6 @@ $MODPATH/acdb.conf"
   NAME=d53e26da0253
   change_name
 fi
-
-# function
-file_check_vendor() {
-for FILE in $FILES; do
-  DES=$VENDOR$FILE
-  DES2=$ODM$FILE
-  if [ -f $DES ] || [ -f $DES2 ]; then
-    ui_print "- Detected $FILE"
-    ui_print " "
-    rm -f $MODPATH/system/vendor$FILE
-  fi
-done
-}
-
-# check
-FILES="/lib/libstagefrightdolby.so
-       /lib/libstagefright_soft_ddpdec.so"
-file_check_vendor
 
 # fix sensor
 if [ "`grep_prop dolby.fix.sensor $OPTIONALS`" == 1 ]; then
