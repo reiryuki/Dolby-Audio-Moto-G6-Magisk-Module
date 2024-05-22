@@ -29,6 +29,13 @@ if [ "`grep_prop debug.log $OPTIONALS`" == 1 ]; then
   ui_print " "
 fi
 
+# recovery
+if [ "$BOOTMODE" != true ]; then
+  MODPATH_UPDATE=`echo $MODPATH | sed 's|modules/|modules_update/|g'`
+  rm -f $MODPATH/update
+  rm -rf $MODPATH_UPDATE
+fi
+
 # run
 . $MODPATH/function.sh
 
@@ -840,11 +847,9 @@ if [ "`grep_prop dolby.patch $OPTIONALS`" != 0 ]; then
 fi
 NAME=libstagefright_foundation.so
 NAME2=libstagefright_fdtn_dolby.so
-if [ "$LIST32BIT" ]; then
-  FILE=$MODPATH/system/vendor/lib/$NAME
-  MODFILE=$MODPATH/system/vendor/lib/$NAME2
-  rename_file
-fi
+FILE=$MODPATH/system/vendor/lib/$NAME
+MODFILE=$MODPATH/system/vendor/lib/$NAME2
+rename_file
 FILE="$MODPATH/system/vendor/lib*/$NAME2
 $MODPATH/system/vendor/lib*/libdlbdsservice.so
 $MODPATH/system/vendor/lib*/libstagefrightdolby.so
@@ -926,7 +931,7 @@ fi
 # raw
 FILE=$MODPATH/.aml.sh
 if [ "`grep_prop disable.raw $OPTIONALS`" == 0 ]; then
-  ui_print "- Not disables Ultra Low Latency playback (RAW)"
+  ui_print "- Does not disable Ultra Low Latency playback (RAW)"
   ui_print " "
 else
   sed -i 's|#u||g' $FILE
