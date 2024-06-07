@@ -804,6 +804,8 @@ done
 }
 
 # check
+FILES=/etc/media_codecs_dolby_audio.xml
+file_check_vendor
 FILES="/lib/libstagefrightdolby.so
        /lib/libstagefright_soft_ddpdec.so"
 file_check_vendor
