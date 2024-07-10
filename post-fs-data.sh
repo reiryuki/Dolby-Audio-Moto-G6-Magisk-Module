@@ -71,6 +71,12 @@ chown 1046.1013 $DIR
 chcon u:object_r:vendor_media_data_file:s0 $DIR
 
 # permission
+chmod 0751 $MODPATH/system/bin
+FILES=`find $MODPATH/system/bin -type f`
+for FILE in $FILES; do
+  chmod 0755 $FILE
+done
+chown -R 0.2000 $MODPATH/system/bin
 DIRS=`find $MODPATH/vendor\
            $MODPATH/system/vendor -type d`
 for DIR in $DIRS; do

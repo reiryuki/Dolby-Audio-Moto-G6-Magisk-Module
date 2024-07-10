@@ -56,22 +56,6 @@ else
 fi
 ui_print " "
 
-# bit
-if [ "$IS64BIT" == true ]; then
-  ui_print "- 64 bit architecture"
-  ui_print " "
-  # 32 bit
-  if [ "$LIST32BIT" ]; then
-    ui_print "- 32 bit library support"
-  else
-    abort "! This ROM doesn't support 32 bit library."
-  fi
-  ui_print " "
-else
-  ui_print "- 32 bit architecture"
-  ui_print " "
-fi
-
 # sdk
 NUM=26
 if [ "$API" -lt $NUM ]; then
@@ -85,6 +69,28 @@ fi
 
 # recovery
 mount_partitions_in_recovery
+
+# bit
+AUDIO64BIT=`grep linker64 /*/bin/hw/*audio*`
+if [ "$LIST32BIT" ]; then
+  if [ "$IS64BIT" == true ]; then
+    ui_print "- 64 bit architecture"
+    ui_print " "
+    ui_print "- 32 bit library support"
+    ui_print " "
+  else
+    ui_print "- 32 bit architecture"
+    rm -rf `find $MODPATH -type d -name *64*`
+    ui_print " "
+  fi
+  if [ "$AUDIO64BIT" ]; then
+    ui_print "! This module uses 32 bit audio service only"
+    ui_print "  But this ROM uses 64 bit audio service"
+    abort
+  fi
+else
+  abort "! This ROM doesn't support 32 bit library"
+fi
 
 # magisk
 magisk_setup
@@ -804,9 +810,8 @@ done
 }
 
 # check
-FILES=/etc/media_codecs_dolby_audio.xml
-file_check_vendor
-FILES="/lib/libstagefrightdolby.so
+FILES="/etc/media_codecs_dolby_audio.xml
+       /lib/libstagefrightdolby.so
        /lib/libstagefright_soft_ddpdec.so"
 file_check_vendor
 
@@ -845,6 +850,16 @@ if [ "`grep_prop dolby.patch $OPTIONALS`" != 0 ]; then
   change_name
   NAME=ro.product.model
   NAME2=ro.product.audio
+  change_name
+fi
+NAME=libhidlbase.so
+NAME2=libhidldlbs.so
+FILE=$MODPATH/system/lib/$NAME
+MODFILE=$MODPATH/system/vendor/lib/$NAME2
+rename_file
+if [ -f $MODPATH/system/vendor/lib/$NAME2 ]; then
+  FILE="$MODPATH/system/vendor/lib*/$NAME2
+$MODPATH/system/vendor/lib*/vendor.dolby.hardware.dms@1.0.so"
   change_name
 fi
 NAME=libstagefright_foundation.so
@@ -910,6 +925,23 @@ $MODPATH/acdb.conf"
   change_name
   NAME=d53e26da0253
   change_name
+fi
+
+# move
+if [ "`grep_prop dolby.systemservice $OPTIONALS`" != 0 ]; then
+  ui_print "- Using system service instead of vendor service"
+  mkdir -p $MODPATH/system/bin/hw
+  mv -f $MODPATH/system/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service $MODPATH/system/bin/hw
+  touch $MODPATH/system/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
+  mv -f $MODPATH/system/vendor/lib/vendor.dolby.hardware.dms@1.0-impl.so $MODPATH/system/lib
+  mv -f $MODPATH/system/vendor/lib/libdlbdsservice.so $MODPATH/system/lib
+  mv -f $MODPATH/system/vendor/lib/libdapdsservice.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/vendor.dolby.hardware.dms@1.0.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/libdapparamstorage.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/libhidldlbs.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/libstagefright_fdtn_dolby.so $MODPATH/system/lib
+  sed -i 's|realpath /vendor|realpath /system|g' $MODPATH/service.sh
+  ui_print " "
 fi
 
 # fix sensor
