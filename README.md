@@ -21,7 +21,7 @@
 - https://t.me/androidryukimodsdiscussions/610
 
 ## Requirements
-- 32 bit architecture or 64 bit architecture with 32 bit library support
+- 32 bit audio service (this also can be found in 64 bit ROM with 32 bit support, not only 32 bit ROM)
 - Android 8 and up
 - Magisk or KernelSU installed (Recommended to use Magisk Delta/Kitsune Mask for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/androidryukimodsdiscussions/100091)
 
