@@ -1,8 +1,8 @@
 id=DolbyAudio
 name=Dolby Audio Moto G6
-version=v8.0
-versionCode=80
+version=v8.1
+versionCode=81
 author=Rei Ryuki the Fixer
-description=An equalizer global type sound effect ported from Motorola G6 (ali) for any Android 8 and up.
+description=Equalizer global type sound effect ported from Motorola G6 (ali) for any Android 8 and up, ARM or ARM64 architecture.
 
 
