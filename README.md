@@ -15,13 +15,13 @@
 - system_black: https://t.me/viperatmos DolbyAtmos-moto-onepower-0.01-ACDB.zip
 - Dolby codecs files: https://dumps.tadiphone.dev/dumps/motorola/sofiap_sprout sofiap_ao_eea-user-10-QPRS30.80-109-2-6-6e7cd-release-keys
 - system_support: CrDroid ROM Android 13
-- libmagiskpolicy.so: Kitsune Mask R65C33E4F
+- libmagiskpolicy.so: Kitsune Mask R6687BB53
 
 ## Screenshots
 - https://t.me/androidryukimodsdiscussions/610
 
 ## Requirements
-- ARM or ARM64 architecture
+- armeabi-v7a or arm64-v8a architecture
 - 32 bit audio service (this also can be found in 64 bit ROM with 32 bit support, not only 32 bit ROM)
 - Android 8 (SDK 26) and up
 - Magisk or KernelSU installed (Recommended to use Magisk Delta/Kitsune Mask for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/androidryukimodsdiscussions/100091)
