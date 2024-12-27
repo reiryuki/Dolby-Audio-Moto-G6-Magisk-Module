@@ -11,6 +11,7 @@
 
 ## Sources
 - https://dumps.tadiphone.dev/dumps/motorola/ali user-9-PPS29.118-11-aa435-release-keys
+- libsqlite.so: https://dumps.tadiphone.dev/dumps/zte/p855a01 msmnile-user-11-RKQ1.201221.002-20211215.223102-release-keys
 - DaxUI.apk: https://apkcombo.com/id/dolby-atmos/com.dolby.dax2appUI/download/apk
 - system_black: https://t.me/viperatmos DolbyAtmos-moto-onepower-0.01-ACDB.zip
 - Dolby codecs files: https://dumps.tadiphone.dev/dumps/motorola/sofiap_sprout sofiap_ao_eea-user-10-QPRS30.80-109-2-6-6e7cd-release-keys

@@ -847,6 +847,32 @@ fi
 ui_print " "
 
 # function
+file_check_apex_for_vendor() {
+for FILE in $FILES; do
+  DESS="/apex$FILE $SYSTEM/apex$FILE"
+  for DES in $DESS; do
+    if [ -f $DES ]; then
+      ui_print "- Detected"
+      ui_print "$DES"
+      rm -f $MODPATH/system/vendor$FILE
+      ui_print " "
+    fi
+  done
+done
+}
+file_check_system_for_vendor() {
+for FILE in $FILES; do
+  DESS="$SYSTEM$FILE $SYSTEM_EXT$FILE"
+  for DES in $DESS; do
+    if [ -f $DES ]; then
+      ui_print "- Detected"
+      ui_print "$DES"
+      rm -f $MODPATH/system/vendor$FILE
+      ui_print " "
+    fi
+  done
+done
+}
 file_check_vendor() {
 for FILE in $FILES; do
   DESS="$VENDOR$FILE $ODM$FILE"
@@ -862,9 +888,14 @@ done
 }
 
 # check
-FILES="/etc/media_codecs_dolby_audio.xml
+FILES=/*vndk*/lib/libsqlite.so
+file_check_apex_for_vendor
+FILES=/lib/vndk-*/libsqlite.so
+file_check_system_for_vendor
+FILES="/lib/libsqlite.so
        /lib/libstagefrightdolby.so
-       /lib/libstagefright_soft_ddpdec.so"
+       /lib/libstagefright_soft_ddpdec.so
+       /etc/media_codecs_dolby_audio.xml"
 file_check_vendor
 
 # function
