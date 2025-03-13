@@ -1009,7 +1009,7 @@ if grep -q libvndksupport.so /system/etc/*.txt; then
   rename_file
   if [ -f $MODPATH/system/vendor/lib/$NAME2 ]; then
     FILE="$MODPATH/system/vendor/lib*/$NAME2
-$MODPATH/system/vendor/lib*/vendor.dolby.hardware.dms@1.0.so"
+$MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*.so"
     change_name
   fi
 fi
@@ -1019,10 +1019,9 @@ FILE=$MODPATH/system/vendor/lib/$NAME
 MODFILE=$MODPATH/system/vendor/lib/$NAME2
 rename_file
 FILE="$MODPATH/system/vendor/lib*/$NAME2
-$MODPATH/system/vendor/lib*/libdlbdsservice.so
+$MODPATH/system/vendor/lib*/libdlbdsservice*.so
 $MODPATH/system/vendor/lib*/libstagefrightdolby.so
-$MODPATH/system/vendor/lib*/libstagefright_soft_ddpdec.so"
-#$MODPATH/system/vendor/lib*/libstagefright_soft_ac4dec.so
+$MODPATH/system/vendor/lib*/libstagefright_soft_ddpdec*.so"
 change_name
 if [ "`grep_prop dolby.mod $OPTIONALS`" != 0 ]; then
   NAME=dax-default.xml
@@ -1030,7 +1029,7 @@ if [ "`grep_prop dolby.mod $OPTIONALS`" != 0 ]; then
   FILE=$MODPATH/system/vendor/etc/dolby/$NAME
   MODFILE=$MODPATH/system/vendor/etc/dolby/$NAME2
   rename_file
-  FILE=$MODPATH/system/vendor/lib*/libdlbdsservice.so
+  FILE=$MODPATH/system/vendor/lib*/libdlbdsservice*.so
   change_name
   NAME=dax_sqlite3.db
   NAME2=dap_sqlite3.db
@@ -1051,6 +1050,38 @@ $MODPATH/acdb.conf"
   rename_file
   FILE="$MODPATH/system/vendor/lib*/$NAME2
 $MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*-impl.so
+$MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service"
+  change_name
+  NAME=libdapparamstorage.so
+  NAME2=libdaxparamstorage.so
+  FILE=$MODPATH/system/vendor/lib/$NAME
+  MODFILE=$MODPATH/system/vendor/lib/$NAME2
+  rename_file
+  FILE="$MODPATH/system/vendor/lib*/$NAME2
+$MODPATH/system/vendor/lib*/soundfx/lib*wdlb*.so
+$MODPATH/system/vendor/lib*/libdapdsservice*.so
+$MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*-impl.so
+$MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service
+$MODPATH/system/vendor/lib*/libstagefright_soft_ddpdec*.so"
+  change_name
+  NAME=vendor.dolby.hardware.dms@1.0.so
+  NAME2=vendor.dlbds.hardware.dms@1.0.so
+  FILE=$MODPATH/system/vendor/lib/$NAME
+  MODFILE=$MODPATH/system/vendor/lib/$NAME2
+  rename_file
+  FILE="$MODPATH/system/vendor/lib*/$NAME2
+$MODPATH/system/vendor/lib*/soundfx/lib*wdlb*.so
+$MODPATH/system/vendor/lib*/libdapdsservice*.so
+$MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*-impl.so
+$MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service
+$MODPATH/system/vendor/lib*/libstagefright_soft_ddpdec*.so"
+  change_name
+  NAME=vendor.dolby.hardware.dms@1.0-impl.so
+  NAME2=vendor.dlbds.hardware.dms@1.0-impl.so
+  FILE=$MODPATH/system/vendor/lib/$NAME
+  MODFILE=$MODPATH/system/vendor/lib/$NAME2
+  rename_file
+  FILE="$MODPATH/system/vendor/lib*/$NAME2
 $MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service"
   change_name
   sed -i 's|ro.dolby.mod_uuid false|ro.dolby.mod_uuid true|g' $MODPATH/service.sh
@@ -1084,11 +1115,10 @@ if [ "`grep_prop dolby.systemservice $OPTIONALS`" != 0 ]; then
   mkdir -p $MODPATH/system/bin/hw
   mv -f $MODPATH/system/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service $MODPATH/system/bin/hw
   touch $MODPATH/system/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
-  mv -f $MODPATH/system/vendor/lib/vendor.dolby.hardware.dms@1.0-impl.so $MODPATH/system/lib
-  mv -f $MODPATH/system/vendor/lib/libdlbdsservice.so $MODPATH/system/lib
-  mv -f $MODPATH/system/vendor/lib/libdapdsservice.so $MODPATH/system/lib
-  cp -f $MODPATH/system/vendor/lib/vendor.dolby.hardware.dms@1.0.so $MODPATH/system/lib
-  cp -f $MODPATH/system/vendor/lib/libdapparamstorage.so $MODPATH/system/lib
+  mv -f $MODPATH/system/vendor/lib/vendor.d*.hardware.dms@1.0-impl.so $MODPATH/system/lib
+  mv -f $MODPATH/system/vendor/lib/libd*dsservice.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/vendor.d*.hardware.dms@1.0.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/libda*paramstorage.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libhidldlbs.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libstagefright_fdtn_dolby.so $MODPATH/system/lib
   sed -i 's|realpath /vendor|realpath /system|g' $MODPATH/service.sh
@@ -1137,19 +1167,6 @@ fi
 
 # unmount
 unmount_mirror
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
