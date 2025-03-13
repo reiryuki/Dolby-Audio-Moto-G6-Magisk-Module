@@ -1113,11 +1113,14 @@ fi
 if [ "`grep_prop dolby.systemservice $OPTIONALS`" != 0 ]; then
   ui_print "- Using system service instead of vendor service"
   mkdir -p $MODPATH/system/bin/hw
-  mv -f $MODPATH/system/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service $MODPATH/system/bin/hw
-  touch $MODPATH/system/vendor/bin/hw/vendor.dolby.hardware.dms@1.0-service
-  mv -f $MODPATH/system/vendor/lib/vendor.d*.hardware.dms@1.0-impl.so $MODPATH/system/lib
+  mv -f $MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service $MODPATH/system/bin/hw
+  NAME=vendor.dolby.hardware.dms@1.0-service
+  if [ -f $VENDOR/bin/hw/$NAME ]; then
+    touch $MODPATH/system/vendor/bin/hw/$NAME
+  fi
+  mv -f $MODPATH/system/vendor/lib/vendor.d*.hardware.dms*@*-impl.so $MODPATH/system/lib
   mv -f $MODPATH/system/vendor/lib/libd*dsservice.so $MODPATH/system/lib
-  cp -f $MODPATH/system/vendor/lib/vendor.d*.hardware.dms@1.0.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/vendor.d*.hardware.dms*@*.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libda*paramstorage.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libhidldlbs.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libstagefright_fdtn_dolby.so $MODPATH/system/lib
