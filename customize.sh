@@ -270,6 +270,15 @@ DIR=/lib
 LISTS=`strings $MODPATH/system/vendor$DIR/$DES | grep ^lib | grep .so`
 FILE=`for LIST in $LISTS; do echo $SYSTEM$DIR/$LIST; done`
 check_function
+NAME=_ZN7android8String16aSEOS0_
+DES=libhidlbase.so
+LIB=libutils.so
+if [ -f $MODPATH/system$DIR/$DES ]; then
+  LISTS=`strings $MODPATH/system$DIR/$DES | grep ^lib | grep .so\
+         | sed "s|$DES||g"`
+  FILE=`for LIST in $LISTS; do echo $SYSTEM$DIR/$LIST; done`
+  check_function
+fi
 
 # check
 LIBS="libhidltransport.so libhwbinder.so"
@@ -1025,6 +1034,31 @@ if grep -q libvndksupport.so /system/etc/*.txt; then
 $MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*.so"
     change_name
   fi
+  NAME=libutils.so
+  NAME2=libutdlb.so
+  FILE=$MODPATH/system/lib/$NAME
+  MODFILE=$MODPATH/system/vendor/lib/$NAME2
+  rename_file
+  if [ -f $MODPATH/system/vendor/lib/$NAME2 ]; then
+    FILE="$MODPATH/system/vendor/lib*/$NAME2
+$MODPATH/system/vendor/lib*/hw/android.hardware.audio.effect@*.0-impl.so
+$MODPATH/system/vendor/lib*/libhidldlbs.so
+$MODPATH/system/vendor/lib*/libsqlite.so
+$MODPATH/system/vendor/lib*/soundfx/lib*wdap*.so
+$MODPATH/system/vendor/lib*/soundfx/libswvqe*.so
+$MODPATH/system/vendor/lib*/soundfx/libswgamedap*.so
+$MODPATH/system/vendor/lib*/libdapparamstorage*.so
+$MODPATH/system/vendor/lib*/libdlbdsservice*.so
+$MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service
+$MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*.so
+$MODPATH/system/vendor/lib*/vendor.dolby*.hardware.dms*@*-impl.so
+$MODPATH/system/vendor/lib*/libdeccfg*.so
+$MODPATH/system/vendor/lib*/libstagefright_foundation.so
+$MODPATH/system/vendor/lib*/libstagefrightdolby.so
+$MODPATH/system/vendor/lib*/libstagefright_soft_ddpdec*.so
+$MODPATH/system/vendor/lib*/libstagefright_soft_ac4dec*.so"
+    change_name
+  fi
 fi
 NAME=libstagefright_foundation.so
 NAME2=libstagefright_fdtn_dolby.so
@@ -1136,6 +1170,7 @@ if [ "`grep_prop dolby.systemservice $OPTIONALS`" != 0 ]; then
   cp -f $MODPATH/system/vendor/lib/vendor.d*.hardware.dms*@*.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libda*paramstorage.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libhidldlbs.so $MODPATH/system/lib
+  cp -f $MODPATH/system/vendor/lib/libutdlb.so $MODPATH/system/lib
   cp -f $MODPATH/system/vendor/lib/libstagefright_fdtn_dolby.so $MODPATH/system/lib
   sed -i 's|realpath /vendor|realpath /system|g' $MODPATH/service.sh
   ui_print " "
