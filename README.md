@@ -26,7 +26,7 @@
 - armeabi-v7a or arm64-v8a architecture
 - 32 bit audio service (this also can be found in 64 bit ROM with 32 bit support, not only 32 bit ROM)
 - Android 8 (SDK 26) and up
-- Magisk or KernelSU installed (Recommended to use Magisk Delta/Kitsune Mask for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/ryukinotes/49)
+- Magisk or Kitsune Mask or KernelSU or Apatch installed (Recommended to use Magisk Delta/Kitsune Mask for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/ryukinotes/49)
 
 ## WARNING!!!
 - Possibility of bootloop or even softbrick or a service failure on Read-Only ROM if you don't use Magisk Delta/Kitsune Mask.
@@ -36,7 +36,7 @@
 - Remove any other else Dolby MAGISK MODULE with different name (no need to remove if it's the same name)
 - Reboot
 - If you have Dolby in-built in your ROM, then you need to activate data.cleanup=1 at the first time install (READ Optionals bellow!)
-- Install this module https://www.pling.com/p/1531593/ via Magisk app or KernelSU app or Recovery if Magisk installed
+- Install this module https://www.pling.com/p/1531593/ via Magisk app or Kitsune Mask app or KernelSU app or Apatch app or Recovery if Magisk or Kitsune Mask installed
 - Install AML Magisk Module https://t.me/ryukinotes/34 only if using any other else audio mod module
 - If you are using KernelSU, you need to disable Unmount Modules by Default in KernelSU app settings
 - Reboot
