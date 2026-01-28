@@ -168,7 +168,7 @@ if ! echo "$ABILIST" | grep -q $NAME2; then
     abort
   fi
 fi
-if ! file /*/bin/hw/*hardware*audio* | grep -q 32-bit; then
+if ! file /*/bin/hw/*audio* | grep -q 32-bit; then
   ui_print "! This module uses 32 bit audio service only"
   ui_print "  But this ROM uses 64 bit audio service"
   abort
@@ -219,17 +219,16 @@ if [ "`grep_prop dolby.mod $OPTIONALS`" == 0 ]; then
     ui_print "  otherwise this module will not work."
   fi
   ui_print " "
-fi
-
-# check
-FILE=/bin/hw/vendor.dolby.media.c2@1.0-service
-if [ -f $SYSTEM$FILE ] || [ -f $VENDOR$FILE ]\
-|| [ -f $ODM$FILE ] || [ -f $SYSTEM_EXT$FILE ]\
-|| [ -f $PRODUCT$FILE ]; then
-  ui_print "! This module maybe conflicting with your"
-  ui_print "  $FILE"
-  ui_print "  causes your internal storage mount failure"
-  ui_print " "
+  FILE=/bin/hw/vendor.dolby.media.c2@1.0-service
+  if [ -f $SYSTEM$FILE ] || [ -f $VENDOR$FILE ]\
+  || [ -f $ODM$FILE ] || [ -f $SYSTEM_EXT$FILE ]\
+  || [ -f $PRODUCT$FILE ]; then
+    ui_print "! This module maybe conflicting with your"
+    ui_print "  $FILE"
+    ui_print "  If your device internal storage mount failure,"
+    ui_print "  you need to remove dolby.mod=0 to fix that."
+    ui_print " "
+  fi
 fi
 
 # function
@@ -659,24 +658,35 @@ elif [ "`grep_prop permissive.mode $OPTIONALS`" == 2 ]; then
   ui_print " "
 fi
 
-# remount
-remount_rw
-
-# early init mount dir
-early_init_mount_dir
-
 # patch manifest.xml
+remount_rw
+early_init_mount_dir
+DIR=/data/adb/modules/$MODID
 if [ "$API" -ge 28 ]; then
-  FILE="$INTERNALDIR/mirror/*/etc/vintf/manifest.xml
-        $INTERNALDIR/mirror/*/*/etc/vintf/manifest.xml
-        /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
-        $INTERNALDIR/mirror/*/etc/vintf/manifest/*.xml
-        $INTERNALDIR/mirror/*/*/etc/vintf/manifest/*.xml
-        /*/etc/vintf/manifest/*.xml /*/*/etc/vintf/manifest/*.xml"
+  if [ "$BOOTMODE" == true ]\
+  && grep -q 'BUGGY MODE' $DIR/module.prop; then
+    FILE="$INTERNALDIR/mirror/*/etc/vintf/manifest.xml
+          $INTERNALDIR/mirror/*/*/etc/vintf/manifest.xml
+          $INTERNALDIR/mirror/*/etc/vintf/manifest/*.xml
+          $INTERNALDIR/mirror/*/*/etc/vintf/manifest/*.xml"
+  else
+    FILE="$INTERNALDIR/mirror/*/etc/vintf/manifest.xml
+          $INTERNALDIR/mirror/*/*/etc/vintf/manifest.xml
+          /*/etc/vintf/manifest.xml /*/*/etc/vintf/manifest.xml
+          $INTERNALDIR/mirror/*/etc/vintf/manifest/*.xml
+          $INTERNALDIR/mirror/*/*/etc/vintf/manifest/*.xml
+          /*/etc/vintf/manifest/*.xml /*/*/etc/vintf/manifest/*.xml"
+  fi
 else
-  FILE="$INTERNALDIR/mirror/*/manifest.xml
-        $INTERNALDIR/mirror/*/*/manifest.xml
-        /*/manifest.xml /*/*/manifest.xml"
+  if [ "$BOOTMODE" == true ]\
+  && grep -q 'BUGGY MODE' $DIR/module.prop; then
+    FILE="$INTERNALDIR/mirror/*/manifest.xml
+          $INTERNALDIR/mirror/*/*/manifest.xml"
+  else
+    FILE="$INTERNALDIR/mirror/*/manifest.xml
+          $INTERNALDIR/mirror/*/*/manifest.xml
+          /*/manifest.xml /*/*/manifest.xml"
+  fi
 fi
 if [ "`grep_prop dolby.skip.vendor $OPTIONALS`" != 1 ]\
 && ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -q 1.0; then
@@ -705,16 +715,13 @@ fi
 if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep -q 1.0; then
   patch_manifest_eim
   if [ $EIM == false ]; then
-    sed -i 's|#s||g' $MODPATH/service.sh
-    ui_print "- Using systemless manifest.xml patch."
-    ui_print "  On some ROMs, it causes bugs or even makes bootloop"
-    ui_print "  because not allowed to restart hwservicemanager."
-    ui_print "  You can fix this by using Magisk Delta/Kitsune Mask."
+    ui_print "- Using BUGGY MODE systemless manifest.xml patch."
+    ui_print "  On some ROMs, it produces some issues or even makes"
+    ui_print "  bootloop because not allowed to restart hwservicemanager."
+    ui_print "  You can fix this by using original Magisk Delta/Kitsune Mask."
     ui_print " "
   fi
 fi
-
-# remount
 remount_ro
 
 # function
@@ -1217,6 +1224,7 @@ if [ "`grep_prop fix.vendor_overlay $OPTIONALS`" == 1 ]\
 fi
 
 # run
+MODSYSTEM=/system
 . $MODPATH/copy.sh
 . $MODPATH/.aml.sh
 
