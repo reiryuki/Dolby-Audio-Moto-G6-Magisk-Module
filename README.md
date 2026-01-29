@@ -24,7 +24,7 @@
 
 ## Requirements
 - armeabi-v7a or arm64-v8a architecture
-- 32 bit audio service (this also can be found in 64 bit ROM with 32 bit support, not only 32 bit ROM)
+- 32 bit HIDL audio service (this also can be found in 64 bit ROM with 32 bit support, not only 32 bit ROM)
 - Android 8 (SDK 26) and up
 - Magisk or Kitsune Mask or KernelSU or Apatch installed (Recommended to use Magisk Delta/Kitsune Mask for systemless early init mount manifest.xml if your ROM is Read-Only https://t.me/ryukinotes/49)
 
