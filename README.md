@@ -21,6 +21,9 @@
 
 ## Changelog
 
+v9.5
+- Fix inaccessible libhwbinder.so in some ROMs
+
 v9.4
 - Support NoMount metamodule
 - Resets module folders/files permissions at post-fs-data
@@ -60,11 +63,6 @@ v8.7
 v8.6
 - Modifies all blobs to fix conflict with in-built Dolby
 
-v8.5
-- Add Action button to clear apps caches
-- Fix architecture detection in some weird ROMs
-- Fix bug in uninstall.sh
-
 ## Screenshots
 https://t.me/androidryukimodsdiscussions/610
 
@@ -83,7 +81,7 @@ Possibility of bootloop or even softbrick or a service failure on Read-Only ROM 
 - Reboot
 - If you are using KernelSU, you need to disable Unmount Modules by Default in KernelSU app settings and install https://github.com/KernelSU-Modules-Repo/meta-overlayfs or https://github.com/KernelSU-Modules-Repo/magic_mount_rs or https://github.com/KernelSU-Modules-Repo/hybrid_mount or https://github.com/maxsteeel/nomount first depending on ROM compatibility
 - If you have Dolby in-built in your ROM, then you need to activate data.cleanup=1 at the first time install (READ Optionals bellow!)
-- Install this module https://devuploads.com/g5f1vf7qdte6 via Magisk app or Kitsune Mask app or KernelSU app or Apatch app or Recovery if Magisk or Kitsune Mask installed
+- Install this module via Magisk app or Kitsune Mask app or KernelSU app or Apatch app or Recovery if Magisk or Kitsune Mask installed
 - Install AML Magisk Module https://t.me/ryukinotes/34 only if using any other else audio mod module
 - Reboot
 - If you are using KernelSU, you need to allow superuser list manually all package name listed in package.txt (and your home launcher app also) (enable show system apps) and reboot afterwards
