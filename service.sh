@@ -97,39 +97,20 @@ for SERVICE in $SERVICES; do
   PID=`pidof $SERVICE`
 done
 
-# restart
-killall vendor.qti.hardware.vibrator.service\
- vendor.qti.hardware.vibrator.service.oneplus9\
- vendor.qti.hardware.vibrator.service.oplus\
- android.hardware.camera.provider@2.4-service_64\
- vendor.mediatek.hardware.mtkpower@1.0-service\
- android.hardware.usb@1.0-service\
- android.hardware.usb@1.0-service.basic\
- android.hardware.light-service.mt6768\
- android.hardware.lights-service.xiaomi_mithorium\
- vendor.samsung.hardware.light-service\
- vendor.qti.hardware.lights.service\
- android.hardware.lights-service.qti
-if grep 'BUGGY MODE' $MODPATH/module.prop; then
-  killall vendor.qti.hardware.display.allocator-service\
-   vendor.qti.hardware.display.composer-service\
-   camerahalserver qcrilNrd mtkfusionrild
+# NoMount
+if $NOMOUNT\
+&& grep 'BUGGY MODE' $MODPATH/module.prop; then
   if [ "$API" -ge 28 ]; then
     DES=/system/etc/vintf/manifest.xml
   else
     DES=/system/manifest.xml
   fi
   FILE=$MODPATH$DES
-  if [ -f $DES ] && $NOMOUNT; then
+  if [ -f $FILE ] && [ -f $DES ]; then
     $NM del $DES 2>/dev/null || true
     $NM add $DES $FILE
   fi
 fi
-#xkillall android.hardware.sensors@1.0-service\
-#x android.hardware.sensors@2.0-service\
-#x android.hardware.sensors@2.0-service-mediatek\
-#x android.hardware.sensors@2.0-service.multihal\
-#x android.hardware.sensors@2.0-service.multihal-mediatek
 
 # wait
 until [ "`getprop sys.boot_completed`" == 1 ]; do
