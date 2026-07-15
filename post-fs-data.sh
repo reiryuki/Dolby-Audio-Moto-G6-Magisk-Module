@@ -201,7 +201,7 @@ else
   FILE="/*/manifest.xml /*/*/manifest.xml"
 fi
 rm -f $MODPATH$M
-if ! grep -A2 vendor.dolby.hardware.dms $FILE | grep 1.0; then
+if ! grep -A2 '>vendor.dolby.hardware.dms<' $FILE | grep 1.0; then
   cp -af $M $MODPATH$M
   if [ -f $MODPATH$M ]; then
     sed -i '/<manifest/a\
