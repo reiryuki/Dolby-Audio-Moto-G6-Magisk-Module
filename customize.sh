@@ -1184,7 +1184,7 @@ $MODPATH/acdb.conf"
 fi
 
 # move
-if [ "`grep_prop dolby.systemservice $OPTIONALS`" != 0 ]; then
+if [ "`grep_prop dolby.systemservice $OPTIONALS`" == 1 ]; then
   ui_print "- Using system service instead of vendor service"
   mkdir -p $MODPATH/system/bin/hw
   mv -f $MODPATH/system/vendor/bin/hw/vendor.dolby*.hardware.dms*@*-service $MODPATH/system/bin/hw

@@ -21,6 +21,9 @@
 
 ## Changelog
 
+v9.8
+- Revert system service mode and using back vendor service instead
+
 v9.7
 - Fix manifest.xml detection bug in some ROMs
 - Fix sepolicy denial
@@ -61,10 +64,6 @@ v8.9
 - Add libutils.so as system_support
 - Abort installation if fail to mount mirror system
 
-v8.8
-- Fake Kitsune Mask detection
-- Improve /odm and /my_product support detection
-
 ## Screenshots
 https://t.me/androidryukimodsdiscussions/610
 
@@ -83,7 +82,7 @@ Possibility of bootloop or even softbrick or a service failure on Read-Only ROM 
 - Reboot
 - If you are using KernelSU, you need to disable Unmount Modules by Default in KernelSU app settings and install https://github.com/KernelSU-Modules-Repo/meta-overlayfs or https://github.com/KernelSU-Modules-Repo/magic_mount_rs or https://github.com/KernelSU-Modules-Repo/hybrid_mount or https://github.com/maxsteeel/nomount first depending on ROM compatibility
 - If you have Dolby in-built in your ROM, then you need to activate data.cleanup=1 at the first time install (READ Optionals bellow!)
-- Install this module https://devuploads.com/fg7hwpci4ogp via Magisk app or Kitsune Mask app or KernelSU app or Apatch app or Recovery if Magisk or Kitsune Mask installed
+- Install this module https://github.com/reiryuki/Dolby-Audio-Moto-G6-Magisk-Module via Magisk app or Kitsune Mask app or KernelSU app or Apatch app or Recovery if Magisk or Kitsune Mask installed
 - Install AML Magisk Module https://t.me/ryukinotes/34 only if using any other else audio mod module
 - Reboot
 - If you are using KernelSU, you need to allow superuser list manually all package name listed in package.txt (and your home launcher app also) (enable show system apps) and reboot afterwards
