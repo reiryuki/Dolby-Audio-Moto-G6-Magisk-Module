@@ -29,7 +29,7 @@ https://t.me/androidryukimodsdiscussions/610
 
 ## Download Links and Changelog
 
-v9.9 https://github.com/reiryuki/Dolby-Audio-Moto-G6-Magisk-Module
+v9.9 https://move2link.co/62a26bf
 - Update libmagiskpolicy.so from Magisk (debug) 31.0 (31000)
 - Prepare /storage/emulated/"$UID"/Android/data/$PKG/ directories
 - Add a new optional dolby.mod_xml to let users to use any modified/custom dax-default.xml. Please read Optionals below.
